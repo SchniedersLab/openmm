@@ -54,6 +54,7 @@ extern "C" OPENMM_EXPORT void registerKernelFactories() {
         platform.registerKernelFactory(CalcAmoebaGeneralizedKirkwoodForceKernel::Name(), factory);
         platform.registerKernelFactory(CalcAmoebaVdwForceKernel::Name(), factory);
         platform.registerKernelFactory(CalcAmoebaWcaDispersionForceKernel::Name(), factory);
+        platform.registerKernelFactory(CalcGKCavitationForceKernel::Name(), factory);
         platform.registerKernelFactory(CalcHippoNonbondedForceKernel::Name(), factory);
     }
     catch (...) {
@@ -89,6 +90,9 @@ KernelImpl* AmoebaCudaKernelFactory::createKernelImpl(std::string name, const Pl
 
     if (name == CalcAmoebaWcaDispersionForceKernel::Name())
         return new CommonCalcAmoebaWcaDispersionForceKernel(name, platform, cu, context.getSystem());
+
+    if (name == CalcGKCavitationForceKernel::Name())
+        return new CudaCalcGKCavitationForceKernel(name, platform, cu, context.getSystem());
 
     if (name == CalcHippoNonbondedForceKernel::Name())
         return new CudaCalcHippoNonbondedForceKernel(name, platform, cu, context.getSystem());

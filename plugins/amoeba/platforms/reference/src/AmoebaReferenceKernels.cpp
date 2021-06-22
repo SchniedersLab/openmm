@@ -28,6 +28,7 @@
 #include "AmoebaReferenceTorsionTorsionForce.h"
 #include "AmoebaReferenceWcaDispersionForce.h"
 #include "AmoebaReferenceGeneralizedKirkwoodForce.h"
+#include "AmoebaReferenceGKCavitationForce.h"
 #include "openmm/internal/AmoebaTorsionTorsionForceImpl.h"
 #include "openmm/internal/AmoebaWcaDispersionForceImpl.h"
 #include "ReferencePlatform.h"
@@ -858,4 +859,100 @@ void ReferenceCalcHippoNonbondedForceKernel::getDPMEParameters(double& alpha, in
     nx = dim[0];
     ny = dim[1];
     nz = dim[2];
+}
+
+// Initializes GKCavitation library
+ReferenceCalcGKCavitationForceKernel::ReferenceCalcGKCavitationForceKernel(const std::string& name, const Platform& platform, const System& system) : CalcGKCavitationForceKernel(name, platform) {}
+
+ReferenceCalcGKCavitationForceKernel::~ReferenceCalcGKCavitationForceKernel(){
+    positions.clear();
+    ishydrogen.clear();
+    radii_vdw.clear();
+    radii_large.clear();
+    gammas.clear();
+    vdw_alpha.clear();
+    charge.clear();
+    free_volume.clear();
+    self_volume.clear();
+    vol_force.clear();
+    vol_dv.clear();
+    volume_scaling_factor.clear();
+}
+
+void ReferenceCalcGKCavitationForceKernel::initialize(const System& system, const AmoebaGKCavitationForce& force) {
+    numParticles = force.getNumParticles();
+
+    //input lists
+    positions.resize(numParticles);
+    radii_large.resize(numParticles);//van der Waals radii + offset (large radii)
+    radii_vdw.resize(numParticles);//van der Waals radii (small radii)
+    gammas.resize(numParticles);
+    ishydrogen.resize(numParticles);
+
+    //output lists
+    free_volume.resize(numParticles);
+    self_volume.resize(numParticles);
+    free_volume_vdw.resize(numParticles);
+    self_volume_vdw.resize(numParticles);
+    free_volume_large.resize(numParticles);
+    self_volume_large.resize(numParticles);
+    vol_force.resize(numParticles);
+    vol_dv.resize(numParticles);
+
+    vector<double> vdwrad(numParticles);
+    roffset = GKCAV_RADIUS_INCREMENT;
+    common_gamma = -1;
+    for (int i = 0; i < numParticles; i++){
+        double r, g, alpha, q;
+        bool h;
+        force.getParticleParameters(i, r, g, h);
+        radii_large[i] = r + roffset;
+        radii_vdw[i] = r;
+        vdwrad[i] = r; //double version for lookup table setup
+        gammas[i] = g;
+        if(h) gammas[i] = 0.0;
+        ishydrogen[i] = h ? 1 : 0;
+        //make sure that all gamma's are the same
+        if(common_gamma < 0 && !h){
+            common_gamma = g; //first occurrence of a non-zero gamma
+        }else{
+            if(!h && pow(common_gamma - g,2) > FLT_MIN){
+                throw OpenMMException("initialize(): GKCavitation does not support multiple gamma values.");
+            }
+        }
+
+    }
+
+    //volume scaling factors and born radii
+    volume_scaling_factor.resize(numParticles);
+}
+
+double ReferenceCalcGKCavitationForceKernel::execute(ContextImpl& context, bool includeForces, bool includeEnergy) {
+    double energy = 0.0;
+    vector<RealVec>& pos = extractPositions(context);
+    vector<RealVec>& force = extractForces(context);
+    AmoebaReferenceGKCavitationForce amoebaReferenceGkCavitationForce;
+    energy = amoebaReferenceGkCavitationForce.calculateForceAndEnergy(pos, force, numParticles,
+            ishydrogen, radii_large, radii_vdw, gammas,
+            roffset, vol_force, vol_dv, free_volume, self_volume);
+    return energy;
+}
+
+void ReferenceCalcGKCavitationForceKernel::copyParametersToContext(ContextImpl& context, const AmoebaGKCavitationForce& force) {
+    if (force.getNumParticles() != numParticles)
+        throw OpenMMException("updateParametersInContext: The number of GKCavitation particles has changed");
+
+    for (int i = 0; i < numParticles; i++){
+        double r, g;
+        bool h;
+        force.getParticleParameters(i, r, g, h);
+        if(pow(radii_vdw[i]-r,2) > 1.e-6){
+            throw OpenMMException("updateParametersInContext: GKCavitation plugin does not support changing atomic radii.");
+        }
+        if(h && ishydrogen[i] == 0){
+            throw OpenMMException("updateParametersInContext: GKCavitation plugin does not support changing heavy/hydrogen atoms.");
+        }
+        gammas[i] = g;
+        if(h) gammas[i] = 0.0;
+    }
 }

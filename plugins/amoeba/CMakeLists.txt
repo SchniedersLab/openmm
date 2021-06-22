@@ -16,7 +16,7 @@
 
 # The source is organized into subdirectories, but we handle them all from
 # this CMakeLists file rather than letting CMake visit them as SUBDIRS.
-SET(OPENMM_AMOEBA_PLUGIN_SOURCE_SUBDIRS . openmmapi serialization)
+SET(OPENMM_AMOEBA_PLUGIN_SOURCE_SUBDIRS . openmmapi serialization gaussvol)
 
 # Collect up information about the version of the OpenMM library we're building
 # and make it available to the code so it can be built into the binaries.

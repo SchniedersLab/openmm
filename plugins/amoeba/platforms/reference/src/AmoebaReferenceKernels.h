@@ -36,6 +36,8 @@
 #include "AmoebaReferenceVdwForce.h"
 #include "ReferenceNeighborList.h"
 #include "SimTKOpenMMRealType.h"
+#include <vector>
+#include <RealVec.h>
 
 namespace OpenMM {
 
@@ -503,6 +505,56 @@ private:
 
     AmoebaReferenceHippoNonbondedForce* ixn;
     int numParticles;
+};
+
+/**
+ * This kernel is invoked by GKCavitationForce to calculate the forces acting
+ * on the system and the energy of the system.
+ */
+class ReferenceCalcGKCavitationForceKernel : public CalcGKCavitationForceKernel {
+public:
+    ReferenceCalcGKCavitationForceKernel(const std::string& name, const Platform& platform, const System& system);
+    ~ReferenceCalcGKCavitationForceKernel();
+    /**
+        * Initialize the kernel.
+        *
+        * @param system     the System this kernel will be applied to
+        * @param force      the GKCavitationForce this kernel will be used for
+        */
+    void initialize(const OpenMM::System& system, const AmoebaGKCavitationForce& force);
+    /**
+        * Execute the kernel to calculate the forces and/or energy.
+        *
+        * @param context        the context in which to execute this kernel
+        * @return the potential energy due to the force
+        */
+    double execute(OpenMM::ContextImpl& context, bool includeForces, bool includeEnergy);
+    /**
+        * Copy changed parameters over to a context.
+        *
+        * @param context    the context to copy parameters to
+        * @param force      the GKCavitationForce to copy the parameters from
+        */
+    void copyParametersToContext(OpenMM::ContextImpl& context, const AmoebaGKCavitationForce& force);
+private:
+    //inputs
+    int numParticles;
+    std::vector<RealVec> positions;
+    std::vector<int> ishydrogen;
+    std::vector<RealOpenMM> radii_vdw;
+    std::vector<RealOpenMM> radii_large;
+    std::vector<RealOpenMM> gammas;
+    double common_gamma;
+    std::vector<RealOpenMM> vdw_alpha;
+    std::vector<RealOpenMM> charge;
+    //outputs
+    std::vector<RealOpenMM> free_volume, self_volume;
+    std::vector<RealOpenMM> free_volume_vdw, self_volume_vdw;
+    std::vector<RealOpenMM> free_volume_large, self_volume_large;
+    std::vector<RealVec> vol_force;
+    std::vector<RealOpenMM> vol_dv;
+    std::vector<RealOpenMM> volume_scaling_factor;
+    double roffset;
 };
 
 } // namespace OpenMM

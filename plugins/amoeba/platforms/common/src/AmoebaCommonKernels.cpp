@@ -2170,7 +2170,8 @@ void CommonCalcAmoebaVdwForceKernel::copyParametersToContext(ContextImpl& contex
     atomTypeVec.resize(cc.getPaddedNumAtoms(), 0);
     int numTypes = sigmaMatrix.size();
     if (sigmaEpsilon.getSize() != numTypes*numTypes)
-        throw OpenMMException("updateParametersInContext: The number of particle types has changed");
+        sigmaEpsilon.resize(numTypes*numTypes);
+    //    throw OpenMMException("updateParametersInContext: The number of particle types has changed");
     vector<mm_float2> sigmaEpsilonVec(sigmaEpsilon.getSize());
     for (int i = 0; i < numTypes; i++)
         for (int j = 0; j < numTypes; j++)
@@ -2251,6 +2252,7 @@ void CommonCalcAmoebaWcaDispersionForceKernel::initialize(const System& system, 
     defines["RMINO"] = cc.doubleToString(force.getRmino());
     defines["RMINH"] = cc.doubleToString(force.getRminh());
     defines["AWATER"] = cc.doubleToString(force.getAwater());
+    defines["DISPOFF"] = cc.doubleToString(force.getDispoff());
     defines["SHCTD"] = cc.doubleToString(force.getShctd());
     defines["M_PI"] = cc.doubleToString(M_PI);
     ComputeProgram program = cc.compileProgram(CommonAmoebaKernelSources::amoebaWcaForce, defines);
