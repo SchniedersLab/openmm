@@ -2170,8 +2170,7 @@ void CommonCalcAmoebaVdwForceKernel::copyParametersToContext(ContextImpl& contex
     atomTypeVec.resize(cc.getPaddedNumAtoms(), 0);
     int numTypes = sigmaMatrix.size();
     if (sigmaEpsilon.getSize() != numTypes*numTypes)
-        sigmaEpsilon.resize(numTypes*numTypes);
-    //    throw OpenMMException("updateParametersInContext: The number of particle types has changed");
+        throw OpenMMException("updateParametersInContext: The number of particle types has changed");
     vector<mm_float2> sigmaEpsilonVec(sigmaEpsilon.getSize());
     for (int i = 0; i < numTypes; i++)
         for (int j = 0; j < numTypes; j++)
