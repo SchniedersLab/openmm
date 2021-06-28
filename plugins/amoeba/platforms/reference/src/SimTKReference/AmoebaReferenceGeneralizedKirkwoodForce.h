@@ -216,6 +216,22 @@ public:
     void setCharges(const vector<double>& charges);
 
     /**
+     * Set descreen radii
+     *
+     * @param descreenRadii input vector of descreen radii
+     *
+    */
+    void setDescreenRadii(const vector<double>& descreenRadii);
+
+    /**
+     * Get descreen radii
+     *
+     * @param descreenRadii output vector of descreen radii
+     *
+     */
+    void getDescreenRadii(vector<double>& descreenRadii) const;
+
+    /**
      * Calculate Grycuk Born radii
      *
      * @param particlePositions particle positions
@@ -246,6 +262,7 @@ private:
     std::vector<double> _atomicRadii;
     std::vector<double> _scaleFactors;
     std::vector<double> _charges;
+    std::vector<double> _descreenRadii;
 
     std::vector<double> _bornRadii;
 

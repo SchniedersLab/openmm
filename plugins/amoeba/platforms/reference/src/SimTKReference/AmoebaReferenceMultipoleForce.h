@@ -1254,9 +1254,9 @@ private:
     double _fq;
 
     std::vector<double> _atomicRadii;
-    std::vector<double> _scaledRadii;
+    std::vector<double> _scaleFactors;
+    std::vector<double> _descreenRadii;
     std::vector<double> _bornRadii;
-    std::vector<double> _bornForce;
 
     std::vector<Vec3> _gkField;
     std::vector<Vec3> _inducedDipoleS;

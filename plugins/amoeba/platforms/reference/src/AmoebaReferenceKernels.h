@@ -400,6 +400,14 @@ public:
     void getCharges(std::vector<double>& charges) const;
 
     /**
+     *  Get the vector of descreening radii.
+     *
+     *  @param descreenRadii vector of descreening radii
+     *
+     */
+    void getDescreenRadii(std::vector<double>& descreenRadii) const;
+
+    /**
      * Copy changed parameters over to a context.
      *
      * @param context    the context to copy parameters to
@@ -413,6 +421,7 @@ private:
     std::vector<double> atomicRadii;
     std::vector<double> scaleFactors;
     std::vector<double> charges;
+    std::vector<double> descreenRadii;
     double soluteDielectric;
     double solventDielectric;
     double dielectricOffset;

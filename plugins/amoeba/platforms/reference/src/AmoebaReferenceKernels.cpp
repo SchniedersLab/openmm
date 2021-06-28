@@ -306,6 +306,9 @@ AmoebaReferenceMultipoleForce* ReferenceCalcAmoebaMultipoleForceKernel::setupAmo
         gkKernel->getCharges(parameters);
         amoebaReferenceGeneralizedKirkwoodForce->setCharges(parameters);
 
+        gkKernel->getDescreenRadii(parameters);
+        amoebaReferenceGeneralizedKirkwoodForce->setDescreenRadii(parameters);
+
         // calculate Grycuk Born radii
 
         vector<Vec3>& posData   = extractPositions(context);
@@ -574,6 +577,11 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getCharges(vector<double
     copy(charges.begin(), charges.end(), outputCharges.begin());
 }
 
+void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getDescreenRadii(vector<double>& outputDescreenRadii) const {
+    outputDescreenRadii.resize(descreenRadii.size());
+    copy(descreenRadii.begin(), descreenRadii.end(), outputDescreenRadii.begin());
+}
+
 void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& system, const AmoebaGeneralizedKirkwoodForce& force) {
 
     // check that AmoebaMultipoleForce is present
@@ -595,11 +603,12 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System&
 
     for (int ii = 0; ii < numParticles; ii++) {
 
-        double particleCharge, particleRadius, scalingFactor;
-        force.getParticleParameters(ii, particleCharge, particleRadius, scalingFactor);
+        double particleCharge, particleRadius, scalingFactor, descreenRadius;
+        force.getParticleParameters(ii, particleCharge, particleRadius, scalingFactor, descreenRadius);
         atomicRadii.push_back(particleRadius);
         scaleFactors.push_back(scalingFactor);
         charges.push_back(particleCharge);
+        descreenRadii.push_back(descreenRadius);
 
         // Make sure the charge matches the one specified by the AmoebaMultipoleForce.
 
@@ -633,13 +642,18 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::copyParametersToContext(
     // Record the values.
 
     for (int i = 0; i < numParticles; ++i) {
-        double particleCharge, particleRadius, scalingFactor;
-        force.getParticleParameters(i, particleCharge, particleRadius, scalingFactor);
+        double particleCharge, particleRadius, scalingFactor, descreenRadius;
+        force.getParticleParameters(i, particleCharge, particleRadius, scalingFactor, descreenRadius);
         atomicRadii[i] = particleRadius;
         scaleFactors[i] = scalingFactor;
         charges[i] = particleCharge;
+        descreenRadii[i] = descreenRadius;
     }
 }
+
+/* -------------------------------------------------------------------------- *
+ *                       AmoebaVdw                                            *
+ * -------------------------------------------------------------------------- */
 
 ReferenceCalcAmoebaVdwForceKernel::ReferenceCalcAmoebaVdwForceKernel(const std::string& name, const Platform& platform, const System& system) :
        CalcAmoebaVdwForceKernel(name, platform), system(system) {

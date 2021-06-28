@@ -1759,14 +1759,14 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
         throw OpenMMException("AmoebaGeneralizedKirkwoodForce requires the System to also contain an AmoebaMultipoleForce");
     NonbondedUtilities& nb = cc.getNonbondedUtilities();
     int paddedNumAtoms = cc.getPaddedNumAtoms();
+    params.initialize<float>(cc, paddedNumAtoms * 3,"amoebaGkParams");
     int elementSize = (cc.getUseDoublePrecision() ? sizeof(double) : sizeof(float));
-    params.initialize<mm_float2>(cc, paddedNumAtoms, "amoebaGkParams");
-    bornRadii .initialize(cc, paddedNumAtoms, elementSize, "bornRadii");
-    field .initialize(cc, 3*paddedNumAtoms, sizeof(long long), "gkField");
+    bornRadii.initialize(cc, paddedNumAtoms, elementSize, "bornRadii");
+    field.initialize(cc, 3*paddedNumAtoms, sizeof(long long), "gkField");
     bornSum.initialize<long long>(cc, paddedNumAtoms, "bornSum");
     bornForce.initialize<long long>(cc, paddedNumAtoms, "bornForce");
-    inducedDipoleS .initialize(cc, 3*paddedNumAtoms, elementSize, "inducedDipoleS");
-    inducedDipolePolarS .initialize(cc, 3*paddedNumAtoms, elementSize, "inducedDipolePolarS");
+    inducedDipoleS.initialize(cc, 3*paddedNumAtoms, elementSize, "inducedDipoleS");
+    inducedDipolePolarS.initialize(cc, 3*paddedNumAtoms, elementSize, "inducedDipolePolarS");
     polarizationType = multipoles->getPolarizationType();
     if (polarizationType != AmoebaMultipoleForce::Direct) {
         inducedField .initialize(cc, 3*paddedNumAtoms, sizeof(long long), "gkInducedField");
@@ -1775,14 +1775,15 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
     cc.addAutoclearBuffer(field);
     cc.addAutoclearBuffer(bornSum);
     cc.addAutoclearBuffer(bornForce);
-    vector<mm_float2> paramsVector(paddedNumAtoms);
+    vector<float> paramsVector(paddedNumAtoms * 3);
     for (int i = 0; i < force.getNumParticles(); i++) {
-        double charge, radius, scalingFactor;
-        force.getParticleParameters(i, charge, radius, scalingFactor);
-        paramsVector[i] = mm_float2((float) radius, (float) (scalingFactor*radius));
-        
+        double charge, radius, scalingFactor, descreenRadius;
+        force.getParticleParameters(i, charge, radius, scalingFactor, descreenRadius);
+        int index = 3*i;
+        paramsVector[index] = (float) radius;
+        paramsVector[index+1] = (float) scalingFactor;
+        paramsVector[index+2] = (float) descreenRadius;
         // Make sure the charge matches the one specified by the AmoebaMultipoleForce.
-        
         double charge2, thole, damping, polarity;
         int axisType, atomX, atomY, atomZ;
         vector<double> dipole, quadrupole;
@@ -1982,11 +1983,14 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::copyParametersToContext(Con
     
     // Record the per-particle parameters.
     
-    vector<mm_float2> paramsVector(cc.getPaddedNumAtoms());
+    vector<float> paramsVector(cc.getPaddedNumAtoms() * 3);
     for (int i = 0; i < force.getNumParticles(); i++) {
-        double charge, radius, scalingFactor;
-        force.getParticleParameters(i, charge, radius, scalingFactor);
-        paramsVector[i] = mm_float2((float) radius, (float) (scalingFactor*radius));
+        double charge, radius, scalingFactor, descreenRadius;
+        force.getParticleParameters(i, charge, radius, scalingFactor, descreenRadius);
+        int index = 3 * i;
+        paramsVector[index] = (float) radius;
+        paramsVector[index+1] = (float) scalingFactor;
+        paramsVector[index+2] = (float) descreenRadius;
     }
     params.upload(paramsVector);
     cc.invalidateMolecules();

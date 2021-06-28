@@ -77,6 +77,18 @@ public:
     int addParticle(double charge, double radius, double scalingFactor);
 
     /**
+     * Add the  parameters for a particle.  This should be called once for each particle
+     * in the System.  When it is called for the i'th time, it specifies the parameters for the i'th particle.
+     *
+     * @param charge         the charge of the particle, measured in units of the proton charge
+     * @param radius         the atomic radius of the particle, measured in nm
+     * @param scalingFactor  the scaling factor for the particle
+     * @param descreenRadius the atomic radius of the particle for descreening, measure in nm
+     * @return the index of the particle that was added
+    */
+    int addParticle(double charge, double radius, double scalingFactor, double descreenRadius);
+
+    /**
      * Get the force field parameters for a particle.
      * 
      * @param      index          the index of the particle for which to get parameters
@@ -87,6 +99,18 @@ public:
     void getParticleParameters(int index, double& charge, double& radius, double& scalingFactor) const;
 
     /**
+     * Get the force field parameters for a particle.
+     *
+     * @param      index          the index of the particle for which to get parameters
+     * @param[out] charge         the charge of the particle, measured in units of the proton charge
+     * @param[out] radius         the atomic radius of the particle, measured in nm
+     * @param[out] scalingFactor  the scaling factor for the particle
+     * @param[out] descreenRadius the atomic radius of the particle for descreening, measure in nm
+    */
+    void getParticleParameters(int index, double& charge, double& radius, double& scalingFactor, double& descreenRadius) const;
+
+
+    /**
      * Set the force field parameters for a particle.
      * 
      * @param index          the index of the particle for which to set parameters
@@ -95,6 +119,17 @@ public:
      * @param scalingFactor  the scaling factor for the particle
      */
     void setParticleParameters(int index, double charge, double radius, double scalingFactor);
+
+    /**
+     * Set the force field parameters for a particle.
+    *
+    * @param index          the index of the particle for which to set parameters
+    * @param charge         the charge of the particle, measured in units of the proton charge
+    * @param radius         the atomic radius of the particle, measured in nm
+    * @param scalingFactor  the scaling factor for the particle
+    * @param descreenRadius the atomic radius of the particle for descreening, measure in nm
+    */
+    void setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius);
 
     /**
      * Get the dielectric constant for the solvent.
@@ -188,12 +223,12 @@ private:
  */
 class AmoebaGeneralizedKirkwoodForce::ParticleInfo {
 public:
-    double charge, radius, scalingFactor;
+    double charge, radius, scalingFactor, descreenRadius;
     ParticleInfo() {
-        charge = radius = scalingFactor = 0.0;
+        charge = radius = scalingFactor = descreenRadius = 0.0;
     }
-    ParticleInfo(double charge, double radius, double scalingFactor) :
-        charge(charge), radius(radius), scalingFactor(scalingFactor) {
+    ParticleInfo(double charge, double radius, double scalingFactor, double descreenRadius) :
+        charge(charge), radius(radius), scalingFactor(scalingFactor), descreenRadius(descreenRadius) {
     }
 };
 

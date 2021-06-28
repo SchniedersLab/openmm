@@ -42,7 +42,7 @@ AmoebaGeneralizedKirkwoodForceProxy::AmoebaGeneralizedKirkwoodForceProxy() : Ser
 }
 
 void AmoebaGeneralizedKirkwoodForceProxy::serialize(const void* object, SerializationNode& node) const {
-    node.setIntProperty("version", 2);
+    node.setIntProperty("version", 3);
     const AmoebaGeneralizedKirkwoodForce& force = *reinterpret_cast<const AmoebaGeneralizedKirkwoodForce*>(object);
 
     node.setIntProperty("forceGroup", force.getForceGroup());
@@ -56,16 +56,16 @@ void AmoebaGeneralizedKirkwoodForceProxy::serialize(const void* object, Serializ
 
     SerializationNode& particles = node.createChildNode("GeneralizedKirkwoodParticles");
     for (unsigned int ii = 0; ii < static_cast<unsigned int>(force.getNumParticles()); ii++) {
-        double radius, charge, scalingFactor;
-        force.getParticleParameters(ii, charge, radius, scalingFactor);
-        particles.createChildNode("Particle").setDoubleProperty("charge", charge).setDoubleProperty("radius", radius).setDoubleProperty("scaleFactor", scalingFactor);
+        double radius, charge, scalingFactor, descreenRadius;
+        force.getParticleParameters(ii, charge, radius, scalingFactor, descreenRadius);
+        particles.createChildNode("Particle").setDoubleProperty("charge", charge).setDoubleProperty("radius", radius).setDoubleProperty("scaleFactor", scalingFactor).setDoubleProperty("descreenRadius", descreenRadius);
     }
 
 }
 
 void* AmoebaGeneralizedKirkwoodForceProxy::deserialize(const SerializationNode& node) const {
     int version = node.getIntProperty("version");
-    if (version < 1 || version > 2)
+    if (version < 1 || version > 3)
         throw OpenMMException("Unsupported version number");
     AmoebaGeneralizedKirkwoodForce* force = new AmoebaGeneralizedKirkwoodForce();
     try {
@@ -78,10 +78,13 @@ void* AmoebaGeneralizedKirkwoodForceProxy::deserialize(const SerializationNode& 
         force->setSurfaceAreaFactor(  node.getDoubleProperty("GeneralizedKirkwoodSurfaceAreaFactor"));
         force->setIncludeCavityTerm(  node.getIntProperty(   "GeneralizedKirkwoodIncludeCavityTerm"));
 
+
         const SerializationNode& particles = node.getChildNode("GeneralizedKirkwoodParticles");
         for (unsigned int ii = 0; ii < particles.getChildren().size(); ii++) {
             const SerializationNode& particle = particles.getChildren()[ii];
-            force->addParticle(particle.getDoubleProperty("charge"), particle.getDoubleProperty("radius"), particle.getDoubleProperty("scaleFactor"));
+            double radius = particle.getDoubleProperty("radius");
+            force->addParticle(particle.getDoubleProperty("charge"), radius,
+                               particle.getDoubleProperty("scaleFactor"), particle.getDoubleProperty("decreenRadius", radius));
         }
     }
     catch (...) {

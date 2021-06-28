@@ -3,19 +3,30 @@
 /**
  * Reduce the Born sums to compute the Born radii.
  */
-KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const float2* RESTRICT params, GLOBAL real* RESTRICT bornRadii) {
+KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const float* RESTRICT params, GLOBAL real* RESTRICT bornRadii) {
     for (unsigned int index = GLOBAL_ID; index < NUM_ATOMS; index += GLOBAL_SIZE) {
         // Get summed Born data
-
         real sum = RECIP((real) 0x100000000)*bornSum[index];
 
         // Now calculate Born radius.
+        float radius = params[index * 3];
+        real ir3 = RECIP(radius*radius*radius);
+        sum = ir3 - sum;
 
-        float radius = params[index].x;
-        radius = RECIP(radius*radius*radius);
-        sum = radius-sum;
-        sum = (sum <= 0 ? (real) 1000 : POW(sum, -1/(real) 3));
+        // If the sum is less than zero, set the Born radius to 50.0 Angstroms.
+        float bigRadius = 5.0f;
+        sum = (sum <= 0 ? bigRadius : POW(sum, -1/(real) 3));
         bornRadii[index] = sum;
+
+        // Born radius should be at least as large as its base radius.
+        if (bornRadii[index] < radius) {
+            bornRadii[index] = radius;
+        }
+
+        // Maximum Born radius is 50.0 Angstroms.
+        if (bornRadii[index] > bigRadius) {
+            bornRadii[index] = bigRadius;
+        }
     }
 }
 
@@ -23,11 +34,11 @@ KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const f
 /**
  * Apply the surface area term to the force and energy.
  */
-KERNEL void computeSurfaceAreaForce(GLOBAL mm_long* RESTRICT bornForce, GLOBAL mixed* RESTRICT energyBuffer, GLOBAL const float2* RESTRICT params, GLOBAL const real* RESTRICT bornRadii) {
+KERNEL void computeSurfaceAreaForce(GLOBAL mm_long* RESTRICT bornForce, GLOBAL mixed* RESTRICT energyBuffer, GLOBAL const float* RESTRICT params, GLOBAL const real* RESTRICT bornRadii) {
     mixed energy = 0;
     for (unsigned int index = GLOBAL_ID; index < NUM_ATOMS; index += GLOBAL_SIZE) {
         real bornRadius = bornRadii[index];
-        float radius = params[index].x;
+        float radius = params[index * 3];
         real r = radius + DIELECTRIC_OFFSET + PROBE_RADIUS;
         real ratio6 = (radius+DIELECTRIC_OFFSET)/bornRadius;
         ratio6 = ratio6*ratio6*ratio6;
@@ -46,32 +57,38 @@ KERNEL void computeSurfaceAreaForce(GLOBAL mm_long* RESTRICT bornForce, GLOBAL m
 typedef struct {
     real3 pos;
     real bornSum;
-    float radius, scaledRadius, padding;
+    float radius, scaleFactor, descreenRadius;
 } AtomData1;
 
 DEVICE real computeBornSumOneInteraction(AtomData1 atom1, AtomData1 atom2) {
     if (atom1.radius <= 0)
         return 0; // Ignore this interaction
+
+    float sk = atom2.scaleFactor * atom2.descreenRadius;
+    if (sk <= 0.0)
+        return 0; // No descreening.
+
     real3 delta = atom2.pos - atom1.pos;
     real r2 = dot(delta, delta);
     real r = SQRT(r2);
-    float sk = atom2.scaledRadius;
 
-    if (atom1.radius > r + sk)
+    float baseRadius = max(atom1.radius, atom1.descreenRadius);
+
+    if (baseRadius > r + sk)
         return 0; // No descreening due to atom1 engulfing atom2.
 
     real sk2 = sk*sk;
-    if (atom1.radius+r < sk) {
-        real lik = atom1.radius;
+    if (baseRadius + r < sk) {
+        real lik = baseRadius;
         real uik = sk - r; 
         atom1.bornSum -= RECIP(uik*uik*uik) - RECIP(lik*lik*lik);
     }
     real uik = r+sk;
     real lik;
-    if (atom1.radius+r < sk)
+    if (baseRadius+r < sk)
         lik = sk-r;
-    else if (r < atom1.radius+sk)
-        lik = atom1.radius;
+    else if (r < baseRadius+sk)
+        lik = baseRadius;
     else
         lik = r-sk;
     real l2 = lik*lik; 
@@ -90,7 +107,7 @@ DEVICE real computeBornSumOneInteraction(AtomData1 atom1, AtomData1 atom2) {
  * Compute the Born sum.
  */
 KERNEL void computeBornSum(GLOBAL mm_ulong* RESTRICT bornSum, GLOBAL const real4* RESTRICT posq,
-        GLOBAL const float2* RESTRICT params, unsigned int numTiles) {
+        GLOBAL const float* RESTRICT params, unsigned int numTiles) {
     unsigned int totalWarps = (GLOBAL_SIZE)/TILE_SIZE;
     unsigned int warp = (GLOBAL_ID)/TILE_SIZE;
     unsigned int pos = (unsigned int) (warp*(mm_long)numTiles/totalWarps);
@@ -113,17 +130,19 @@ KERNEL void computeBornSum(GLOBAL mm_ulong* RESTRICT bornSum, GLOBAL const real4
             }
             unsigned int atom1 = x*TILE_SIZE + tgx;
             data.pos = trimTo3(posq[atom1]);
-            float2 params1 = params[atom1];
-            data.radius = params1.x;
-            data.scaledRadius = params1.y;
+            int index = atom1 * 3;
+            data.radius = params[index];
+            data.scaleFactor = params[index + 1];
+            data.descreenRadius = params[index + 2];
             if (pos >= end)
                 ; // This warp is done.
             else if (x == y) {
                 // This tile is on the diagonal.
-
                 localData[LOCAL_ID].pos = data.pos;
-                localData[LOCAL_ID].radius = params1.x;
-                localData[LOCAL_ID].scaledRadius = params1.y;
+                localData[LOCAL_ID].radius = params[index];
+                localData[LOCAL_ID].scaleFactor = params[index+1];
+                localData[LOCAL_ID].descreenRadius = params[index+2];
+
                 SYNC_WARPS;
                 for (unsigned int j = 0; j < TILE_SIZE; j++) {
                     int atom2 = y*TILE_SIZE+j;
@@ -141,9 +160,10 @@ KERNEL void computeBornSum(GLOBAL mm_ulong* RESTRICT bornSum, GLOBAL const real4
                     unsigned int j = y*TILE_SIZE + tgx;
                     real4 tempPosq = posq[j];
                     localData[LOCAL_ID].pos = trimTo3(tempPosq);
-                    float2 tempParams = params[j];
-                    localData[LOCAL_ID].radius = tempParams.x;
-                    localData[LOCAL_ID].scaledRadius = tempParams.y;
+                    int index = 3 * j;
+                    localData[LOCAL_ID].radius = params[index];
+                    localData[LOCAL_ID].scaleFactor = params[index + 1];
+                    localData[LOCAL_ID].descreenRadius = params[index + 2];
                 }
                 localData[LOCAL_ID].bornSum = 0;
                 SYNC_WARPS;
@@ -426,17 +446,18 @@ KERNEL void computeGKForces(
  */
 typedef struct {
     real3 pos, force;
-    real radius, scaledRadius, bornRadius, bornForce;
+    real radius, scaleFactor, descreenRadius, bornRadius, bornForce;
 } AtomData3;
 
-inline DEVICE AtomData3 loadAtomData3(int atom, GLOBAL const real4* RESTRICT posq, GLOBAL const float2* RESTRICT params,
+inline DEVICE AtomData3 loadAtomData3(int atom, GLOBAL const real4* RESTRICT posq, GLOBAL const float* RESTRICT params,
         GLOBAL const real* RESTRICT bornRadius, GLOBAL const mm_long* RESTRICT bornForce) {
     AtomData3 data;
     data.pos = trimTo3(posq[atom]);
     data.bornRadius = bornRadius[atom];
-    float2 params1 = params[atom];
-    data.radius = params1.x;
-    data.scaledRadius = params1.y;
+    int index = atom * 3;
+    data.radius = params[index];
+    data.scaleFactor = params[index + 1];
+    data.descreenRadius = params[index + 2];
     data.bornForce = bornForce[atom]/(real) 0x100000000;
     return data;
 }
@@ -450,16 +471,27 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
 
     real3 delta = atom2.pos-atom1.pos;
 
-    float sk = atom2.scaledRadius;
+    real sk = atom2.scaleFactor * atom2.descreenRadius;
+    real baseRadius = max(atom1.radius, atom1.descreenRadius);
+
     real sk2 = sk*sk;
     real r2 = dot(delta, delta);
     real r = SQRT(r2);
     real de = 0;
 
-    if (atom1.radius > r + sk)
-        return; // No descreening due to atom1 engulfing atom2.
+    // Maximum Born radius is 50.0 Angstroms
+    real bigRadius = 5.0f;
+    // No descreening due:
+    // 1) the descreened atom (1) has size zero.
+    // 2) the descreening atom (2) has size zero.
+    // 3) descreened atom (1) engulfs the descreening atom (2).
+    // 4) descreened atom (1) has the maximum Born radius.
+    if (baseRadius <= 0 || sk <= 0.0 ||  baseRadius > r + sk || atom1.bornRadius >= bigRadius) {
+        *force = delta * de;
+        return;
+    }
 
-    if (atom1.radius+r < sk) {
+    if (baseRadius + r < sk) {
         real uik = sk-r;
         real uik4 = uik*uik;
         uik4 = uik4*uik4;
@@ -469,8 +501,8 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
         lik4 = lik4*lik4;
         de += 0.25f*M_PI*(sk2-4*sk*r+17*r2)/(r2*lik4);
     }
-    else if (r < atom1.radius+sk) {
-        real lik = atom1.radius;
+    else if (r < baseRadius + sk) {
+        real lik = baseRadius;
         real lik4 = lik*lik;
         lik4 = lik4*lik4;
         de += 0.25f*M_PI*(2*atom1.radius*atom1.radius-sk2-r2)/(r2*lik4);
@@ -495,7 +527,7 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
  */
 KERNEL void computeChainRuleForce(
         GLOBAL mm_ulong* RESTRICT forceBuffers, GLOBAL const real4* RESTRICT posq, unsigned int startTileIndex, unsigned int numTileIndices,
-        GLOBAL const float2* RESTRICT params, GLOBAL const real* RESTRICT bornRadii, GLOBAL const mm_long* RESTRICT bornForce) {
+        GLOBAL const float* RESTRICT params, GLOBAL const real* RESTRICT bornRadii, GLOBAL const mm_long* RESTRICT bornForce) {
     unsigned int totalWarps = (GLOBAL_SIZE)/TILE_SIZE;
     unsigned int warp = (GLOBAL_ID)/TILE_SIZE;
     const unsigned int numTiles = numTileIndices;
@@ -525,7 +557,8 @@ KERNEL void computeChainRuleForce(
 
                 localData[LOCAL_ID].pos = data.pos;
                 localData[LOCAL_ID].radius = data.radius;
-                localData[LOCAL_ID].scaledRadius = data.scaledRadius;
+                localData[LOCAL_ID].scaleFactor = data.scaleFactor;
+                localData[LOCAL_ID].descreenRadius = data.descreenRadius;
                 localData[LOCAL_ID].bornRadius = data.bornRadius;
                 localData[LOCAL_ID].bornForce = data.bornForce;
                 localData[LOCAL_ID].force = make_real3(0);

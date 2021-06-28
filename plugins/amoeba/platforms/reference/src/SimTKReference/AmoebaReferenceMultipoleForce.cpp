@@ -2124,16 +2124,14 @@ AmoebaReferenceGeneralizedKirkwoodMultipoleForce::AmoebaReferenceGeneralizedKirk
 
     _amoebaReferenceGeneralizedKirkwoodForce->getGrycukBornRadii(_bornRadii);
     _amoebaReferenceGeneralizedKirkwoodForce->getAtomicRadii(_atomicRadii);
-    _amoebaReferenceGeneralizedKirkwoodForce->getScaleFactors(_scaledRadii);
+    _amoebaReferenceGeneralizedKirkwoodForce->getScaleFactors(_scaleFactors);
+    _amoebaReferenceGeneralizedKirkwoodForce->getDescreenRadii(_descreenRadii);
 
     _includeCavityTerm            = _amoebaReferenceGeneralizedKirkwoodForce->getIncludeCavityTerm();
     _probeRadius                  = _amoebaReferenceGeneralizedKirkwoodForce->getProbeRadius();
     _surfaceAreaFactor            = _amoebaReferenceGeneralizedKirkwoodForce->getSurfaceAreaFactor();
     _dielectricOffset             = _amoebaReferenceGeneralizedKirkwoodForce->getDielectricOffset();
 
-    for (unsigned int ii = 0; ii < _scaledRadii.size(); ii++) {
-        _scaledRadii[ii] *= _atomicRadii[ii];
-    }
 }
 
 AmoebaReferenceGeneralizedKirkwoodMultipoleForce::~AmoebaReferenceGeneralizedKirkwoodMultipoleForce()
@@ -4062,6 +4060,13 @@ void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRuleP
     unsigned int iIndex             = particleI.particleIndex;
     unsigned int jIndex             = particleJ.particleIndex;
 
+    if (iIndex == jIndex) return;
+
+    double bornRadiusI = _bornRadii[iIndex];
+
+    const double bigRadius = 5.0;
+    if (bornRadiusI >= bigRadius) return;
+
     double pi43                     = (4.0/3.0)*M_PI;
 
     double lik, uik;
@@ -4072,16 +4077,18 @@ void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRuleP
 
     Vec3 deltaR                     = particleJ.position - particleI.position;
 
-    double sk                       = _scaledRadii[jIndex];
+    double sk                       = _scaleFactors[jIndex] * _descreenRadii[jIndex];
+    if (sk <= 0.0) return;
     double sk2                      = sk*sk;
     double r2                       = deltaR.dot(deltaR);
     double r                        = sqrt(r2);
     double de                       = 0.0;
 
-    // If atom index engulfs the descreening atom, then there is no descreening. 
-    if (_atomicRadii[iIndex] > r + sk) return;
+    double baseRadiusI = max(_atomicRadii[iIndex], _descreenRadii[iIndex]);
+    // If atom index engulfs the descreening atom, then there is no descreening.
+    if (baseRadiusI > r + sk) return;
 
-    if ((_atomicRadii[iIndex] + r) < sk) {
+    if ((baseRadiusI + r) < sk) {
         double uik4;
         uik                = sk - r;
         uik4               = uik*uik;
@@ -4089,16 +4096,16 @@ void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRuleP
         de                 = -4.0*M_PI/uik4;
     }
 
-    if ((_atomicRadii[iIndex] + r) < sk) {
+    if ((baseRadiusI + r) < sk) {
         lik          = sk - r;
         lik4         = lik*lik;
         lik4         = lik4*lik4;
         de          += 0.25*M_PI*(sk2-4.0*sk*r+17.0*r2)/ (r2*lik4);
-    } else if (r < (_atomicRadii[iIndex] +sk)) {
-        lik          = _atomicRadii[iIndex];
+    } else if (r < (baseRadiusI +sk)) {
+        lik          = baseRadiusI;
         lik4         = lik*lik;
         lik4         = lik4*lik4;
-        de          += 0.25*M_PI*(2.0*_atomicRadii[iIndex]*_atomicRadii[iIndex]-sk2-r2)/ (r2*lik4);
+        de          += 0.25*M_PI*(2.0*baseRadiusI*baseRadiusI-sk2-r2)/ (r2*lik4);
     } else {
         lik          = r - sk;
         lik4         = lik*lik;

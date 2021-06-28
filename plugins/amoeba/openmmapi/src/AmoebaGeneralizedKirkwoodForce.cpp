@@ -42,7 +42,12 @@ AmoebaGeneralizedKirkwoodForce::AmoebaGeneralizedKirkwoodForce() : solventDielec
 }
 
 int AmoebaGeneralizedKirkwoodForce::addParticle(double charge, double radius, double scalingFactor) {
-    particles.push_back(ParticleInfo(charge, radius, scalingFactor));
+    particles.push_back(ParticleInfo(charge, radius, scalingFactor, radius));
+    return particles.size()-1;
+}
+
+int AmoebaGeneralizedKirkwoodForce::addParticle(double charge, double radius, double scalingFactor, double descreenRadius) {
+    particles.push_back(ParticleInfo(charge, radius, scalingFactor, descreenRadius));
     return particles.size()-1;
 }
 
@@ -52,11 +57,27 @@ void AmoebaGeneralizedKirkwoodForce::getParticleParameters(int index, double& ch
     scalingFactor = particles[index].scalingFactor;
 }
 
+void AmoebaGeneralizedKirkwoodForce::getParticleParameters(int index, double& charge, double& radius, double& scalingFactor, double& descreenRadius) const {
+    charge = particles[index].charge;
+    radius = particles[index].radius;
+    scalingFactor = particles[index].scalingFactor;
+    descreenRadius = particles[index].descreenRadius;
+}
+
 void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double charge, double radius, double scalingFactor) {
     particles[index].charge = charge;
     particles[index].radius = radius;
     particles[index].scalingFactor = scalingFactor;
+    particles[index].descreenRadius = radius;
 }
+
+void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius) {
+    particles[index].charge = charge;
+    particles[index].radius = radius;
+    particles[index].scalingFactor = scalingFactor;
+    particles[index].descreenRadius = descreenRadius;
+}
+
 /*
 double AmoebaGeneralizedKirkwoodForce::getDielectricOffset() const {
     return dielectricOffset;
