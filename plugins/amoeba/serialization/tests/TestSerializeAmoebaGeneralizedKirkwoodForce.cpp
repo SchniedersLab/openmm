@@ -53,10 +53,11 @@ void testSerialization() {
     force1.setProbeRadius(1.40);
     force1.setSurfaceAreaFactor(0.888);
     force1.setIncludeCavityTerm(1);
+    force1.setTanhRescaling(0);
 
-    force1.addParticle(1.0, 2.0, 0.9, 2.0);
-    force1.addParticle(-1.1, 2.1, 0.8, 2.1);
-    force1.addParticle(0.1, 2.2, 0.7, 2.2);
+    force1.addParticle(1.0, 2.0, 0.9, 2.0, 0.0);
+    force1.addParticle(-1.1, 2.1, 0.8, 2.1, 0.0);
+    force1.addParticle(0.1, 2.2, 0.7, 2.2, 0.0);
 
     // Serialize and then deserialize it.
 
@@ -78,11 +79,11 @@ void testSerialization() {
     ASSERT_EQUAL(force1.getNumParticles(), force2.getNumParticles());
     for (unsigned int ii = 0; ii < static_cast<unsigned int>(force1.getNumParticles()); ii++) {
 
-        double radius1, charge1, scaleFactor1, descreen1;
-        double radius2, charge2, scaleFactor2, descreen2;
+        double radius1, charge1, scaleFactor1, descreen1, neckFactor1;
+        double radius2, charge2, scaleFactor2, descreen2, neckFactor2;
 
-        force1.getParticleParameters(ii, charge1, radius1, scaleFactor1, descreen1);
-        force2.getParticleParameters(ii, charge2, radius2, scaleFactor2, descreen2);
+        force1.getParticleParameters(ii, charge1, radius1, scaleFactor1, descreen1, neckFactor1);
+        force2.getParticleParameters(ii, charge2, radius2, scaleFactor2, descreen2, neckFactor2);
 
         ASSERT_EQUAL(charge1, charge2)
         ASSERT_EQUAL(radius1, radius2)

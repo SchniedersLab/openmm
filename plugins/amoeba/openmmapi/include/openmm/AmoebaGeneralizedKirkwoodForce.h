@@ -82,11 +82,12 @@ public:
      *
      * @param charge         the charge of the particle, measured in units of the proton charge
      * @param radius         the atomic radius of the particle, measured in nm
-     * @param scalingFactor  the scaling factor for the particle
+     * @param scalingFactor  the scaling factor for the particle (unitless)
      * @param descreenRadius the atomic radius of the particle for descreening, measure in nm
+     * @param neckFactor     the scaling factor for interstitial neck descreening (unitless)
      * @return the index of the particle that was added
     */
-    int addParticle(double charge, double radius, double scalingFactor, double descreenRadius);
+    int addParticle(double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor);
 
     /**
      * Get the force field parameters for a particle.
@@ -106,9 +107,9 @@ public:
      * @param[out] radius         the atomic radius of the particle, measured in nm
      * @param[out] scalingFactor  the scaling factor for the particle
      * @param[out] descreenRadius the atomic radius of the particle for descreening, measure in nm
+     * @param[out] neckFactor     the scaling factor for interstitial neck descreening (unitless)
     */
-    void getParticleParameters(int index, double& charge, double& radius, double& scalingFactor, double& descreenRadius) const;
-
+    void getParticleParameters(int index, double& charge, double& radius, double& scalingFactor, double& descreenRadius, double& neckFactor) const;
 
     /**
      * Set the force field parameters for a particle.
@@ -128,8 +129,9 @@ public:
     * @param radius         the atomic radius of the particle, measured in nm
     * @param scalingFactor  the scaling factor for the particle
     * @param descreenRadius the atomic radius of the particle for descreening, measure in nm
+    * @param neckFactor     the scaling factor for interstitial neck descreening (unitless)
     */
-    void setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius);
+    void setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor);
 
     /**
      * Get the dielectric constant for the solvent.
@@ -158,6 +160,18 @@ public:
     void setSoluteDielectric(double dielectric) {
         soluteDielectric = dielectric;
     }
+
+    /**
+     * Get the flag signaling whether the solute integral is rescaled by a Tanh function
+     * to account for interstitial spaces.
+    */
+    int getTanhRescaling() const;
+
+    /**
+     * Set the flag signaling whether the solute integral is rescaled by a Tanh function
+     * to account for interstitial spaces.
+    */
+    void setTanhRescaling(int tanhRescaling);
 
     /**
      * Get the flag signaling whether the cavity term should be included
@@ -212,6 +226,7 @@ protected:
 private:
     class ParticleInfo;
     int includeCavityTerm;
+    int tanhRescaling;
     double solventDielectric, soluteDielectric, dielectricOffset,
            probeRadius, surfaceAreaFactor;
     std::vector<ParticleInfo> particles;
@@ -223,12 +238,12 @@ private:
  */
 class AmoebaGeneralizedKirkwoodForce::ParticleInfo {
 public:
-    double charge, radius, scalingFactor, descreenRadius;
+    double charge, radius, scalingFactor, descreenRadius, neckFactor;
     ParticleInfo() {
-        charge = radius = scalingFactor = descreenRadius = 0.0;
+        charge = radius = scalingFactor = descreenRadius = neckFactor = 0.0;
     }
-    ParticleInfo(double charge, double radius, double scalingFactor, double descreenRadius) :
-        charge(charge), radius(radius), scalingFactor(scalingFactor), descreenRadius(descreenRadius) {
+    ParticleInfo(double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor) :
+        charge(charge), radius(radius), scalingFactor(scalingFactor), descreenRadius(descreenRadius), neckFactor(neckFactor) {
     }
 };
 

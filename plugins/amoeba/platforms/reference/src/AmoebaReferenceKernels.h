@@ -321,6 +321,13 @@ public:
     int getIncludeCavityTerm() const;
 
     /**
+     *  Get the 'tanh rescaling' flag.
+     *
+     *  @return tanhRescaling
+     */
+    int getTanhRescaling() const;
+
+    /**
      *  Get the number of particles.
      *
      *  @return number of particles
@@ -408,6 +415,14 @@ public:
     void getDescreenRadii(std::vector<double>& descreenRadii) const;
 
     /**
+     *  Get the vector of neck scaling factors.
+     *
+     *  @param neckFactors vector of neck scaling factors.
+     *
+     */
+    void getNeckFactors(std::vector<double>& neckFactors) const;
+
+    /**
      * Copy changed parameters over to a context.
      *
      * @param context    the context to copy parameters to
@@ -422,12 +437,14 @@ private:
     std::vector<double> scaleFactors;
     std::vector<double> charges;
     std::vector<double> descreenRadii;
+    std::vector<double> neckFactors;
     double soluteDielectric;
     double solventDielectric;
     double dielectricOffset;
     double probeRadius;
     double surfaceAreaFactor;
     int includeCavityTerm;
+    int tanhRescaling;
     int directPolarization;
     const System& system;
 };

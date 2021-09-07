@@ -1775,14 +1775,15 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
     cc.addAutoclearBuffer(field);
     cc.addAutoclearBuffer(bornSum);
     cc.addAutoclearBuffer(bornForce);
-    vector<float> paramsVector(paddedNumAtoms * 3);
+    vector<float> paramsVector(paddedNumAtoms * 4);
     for (int i = 0; i < force.getNumParticles(); i++) {
-        double charge, radius, scalingFactor, descreenRadius;
-        force.getParticleParameters(i, charge, radius, scalingFactor, descreenRadius);
-        int index = 3*i;
+        double charge, radius, scalingFactor, descreenRadius, neckFactor;
+        force.getParticleParameters(i, charge, radius, scalingFactor, descreenRadius, neckFactor);
+        int index = 4*i;
         paramsVector[index] = (float) radius;
         paramsVector[index+1] = (float) scalingFactor;
         paramsVector[index+2] = (float) descreenRadius;
+        paramsVector[index+3] = (float) neckFactor;
         // Make sure the charge matches the one specified by the AmoebaMultipoleForce.
         double charge2, thole, damping, polarity;
         int axisType, atomX, atomY, atomZ;
@@ -1983,14 +1984,15 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::copyParametersToContext(Con
     
     // Record the per-particle parameters.
     
-    vector<float> paramsVector(cc.getPaddedNumAtoms() * 3);
+    vector<float> paramsVector(cc.getPaddedNumAtoms() * 4);
     for (int i = 0; i < force.getNumParticles(); i++) {
-        double charge, radius, scalingFactor, descreenRadius;
-        force.getParticleParameters(i, charge, radius, scalingFactor, descreenRadius);
-        int index = 3 * i;
+        double charge, radius, scalingFactor, descreenRadius, neckFactor;
+        force.getParticleParameters(i, charge, radius, scalingFactor, descreenRadius, neckFactor);
+        int index = 4 * i;
         paramsVector[index] = (float) radius;
         paramsVector[index+1] = (float) scalingFactor;
         paramsVector[index+2] = (float) descreenRadius;
+        paramsVector[index+3] = (float) neckFactor;
     }
     params.upload(paramsVector);
     cc.invalidateMolecules();

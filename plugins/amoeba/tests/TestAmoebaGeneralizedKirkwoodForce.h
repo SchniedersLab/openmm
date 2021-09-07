@@ -8460,7 +8460,6 @@ int main(int argc, char* argv[]) {
 
         // test direct and mutual polarization cases and
         // mutual polarization w/ the cavity term
-
         testGeneralizedKirkwoodAmmoniaDirectPolarization();
         testGeneralizedKirkwoodAmmoniaMutualPolarization();
         testGeneralizedKirkwoodAmmoniaExtrapolatedPolarization();

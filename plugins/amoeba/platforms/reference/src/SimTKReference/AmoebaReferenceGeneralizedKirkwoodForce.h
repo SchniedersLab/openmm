@@ -82,6 +82,20 @@ public:
     void setIncludeCavityTerm(int includeCavityTerm);
 
     /**
+     * Get tanhRescaling flag
+     *
+     * @return tanhRescaling
+     */
+    int getTanhRescaling() const;
+
+    /**
+     *  Set tanhRescaling flag
+     *
+     *  @param tanhRescaling flag indicating whether tanh rescaling of the solute integral is performed.
+     */
+    void setTanhRescaling(int tanhRescaling);
+
+    /**
      *  Get directPolarization flag 
      *
      *  @return directPolarization
@@ -232,6 +246,20 @@ public:
     void getDescreenRadii(vector<double>& descreenRadii) const;
 
     /**
+     * Set neck scale factors
+     *
+     * @param neckFactors input vector of neck scale factors
+     */
+    void setNeckFactors(const vector<double>& neckFactors);
+
+    /**
+     * Get neck scale factors
+     *
+     * @param neckFactors output vector of neck scale factors
+     */
+    void getNeckFactors(vector<double>& neckFactors) const;
+
+    /**
      * Calculate Grycuk Born radii
      *
      * @param particlePositions particle positions
@@ -245,13 +273,24 @@ public:
      * @param bornRadii vector of Born radii
      *
      */
-    void getGrycukBornRadii(vector<double>& bornRadii) const;     
+    void getGrycukBornRadii(vector<double>& bornRadii) const;
+
+    /**
+     * Get Grycik Solute Integral (must have called calculateGrycukBornRadii())
+     *
+     * @param bornRadii vector of Born radii
+     *
+     */
+    void getSoluteIntegral(vector<double>& soluteIntegral) const;
+
+    static void getNeckConstants(double rhoDescreened, double rhoDescreening, double constants[]);
 
 private:
 
     int _numParticles;
     int _includeCavityTerm;
     int _directPolarization;
+    int _tanhRescaling;
 
     double _soluteDielectric;
     double _solventDielectric;
@@ -259,11 +298,17 @@ private:
     double _probeRadius;
     double _surfaceAreaFactor;
 
+    const double beta0 = 0.4694;
+    const double beta1 = 0.0391;
+    const double beta2 = 0.0008;
+
     std::vector<double> _atomicRadii;
     std::vector<double> _scaleFactors;
     std::vector<double> _charges;
     std::vector<double> _descreenRadii;
+    std::vector<double> _neckFactors;
 
+    std::vector<double> _soluteIntegral;
     std::vector<double> _bornRadii;
 
 };

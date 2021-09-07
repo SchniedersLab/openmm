@@ -36,18 +36,18 @@
 
 using namespace OpenMM;
 
-AmoebaGeneralizedKirkwoodForce::AmoebaGeneralizedKirkwoodForce() : solventDielectric(78.3), soluteDielectric(1.0), dielectricOffset(0.009), includeCavityTerm(1), probeRadius(0.14) {
+AmoebaGeneralizedKirkwoodForce::AmoebaGeneralizedKirkwoodForce() : solventDielectric(78.3), soluteDielectric(1.0), dielectricOffset(0.009), includeCavityTerm(1), probeRadius(0.14), tanhRescaling(0) {
 
      surfaceAreaFactor = -6.0* 3.1415926535*0.0216*1000.0*0.4184;
 }
 
 int AmoebaGeneralizedKirkwoodForce::addParticle(double charge, double radius, double scalingFactor) {
-    particles.push_back(ParticleInfo(charge, radius, scalingFactor, radius));
+    particles.push_back(ParticleInfo(charge, radius, scalingFactor, radius, 0.0));
     return particles.size()-1;
 }
 
-int AmoebaGeneralizedKirkwoodForce::addParticle(double charge, double radius, double scalingFactor, double descreenRadius) {
-    particles.push_back(ParticleInfo(charge, radius, scalingFactor, descreenRadius));
+int AmoebaGeneralizedKirkwoodForce::addParticle(double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor) {
+    particles.push_back(ParticleInfo(charge, radius, scalingFactor, descreenRadius, neckFactor));
     return particles.size()-1;
 }
 
@@ -57,11 +57,12 @@ void AmoebaGeneralizedKirkwoodForce::getParticleParameters(int index, double& ch
     scalingFactor = particles[index].scalingFactor;
 }
 
-void AmoebaGeneralizedKirkwoodForce::getParticleParameters(int index, double& charge, double& radius, double& scalingFactor, double& descreenRadius) const {
+void AmoebaGeneralizedKirkwoodForce::getParticleParameters(int index, double& charge, double& radius, double& scalingFactor, double& descreenRadius, double& neckFactor) const {
     charge = particles[index].charge;
     radius = particles[index].radius;
     scalingFactor = particles[index].scalingFactor;
     descreenRadius = particles[index].descreenRadius;
+    neckFactor = particles[index].neckFactor;
 }
 
 void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double charge, double radius, double scalingFactor) {
@@ -71,11 +72,12 @@ void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double cha
     particles[index].descreenRadius = radius;
 }
 
-void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius) {
+void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor) {
     particles[index].charge = charge;
     particles[index].radius = radius;
     particles[index].scalingFactor = scalingFactor;
     particles[index].descreenRadius = descreenRadius;
+    particles[index].neckFactor = neckFactor;
 }
 
 /*
@@ -93,6 +95,14 @@ int AmoebaGeneralizedKirkwoodForce::getIncludeCavityTerm() const {
 
 void AmoebaGeneralizedKirkwoodForce::setIncludeCavityTerm(int inputIncludeCavityTerm) {
     includeCavityTerm = inputIncludeCavityTerm;
+}
+
+int AmoebaGeneralizedKirkwoodForce::getTanhRescaling() const {
+    return tanhRescaling;
+}
+
+void AmoebaGeneralizedKirkwoodForce::setTanhRescaling(int inputTanhRescaling) {
+    tanhRescaling = inputTanhRescaling;
 }
 
 double AmoebaGeneralizedKirkwoodForce::getProbeRadius() const {
