@@ -298,9 +298,9 @@ private:
     double _probeRadius;
     double _surfaceAreaFactor;
 
-    const double beta0 = 0.4694;
-    const double beta1 = 0.0391;
-    const double beta2 = 0.0008;
+    const double beta0 = 0.3900;
+    const double beta1 = 0.0290;
+    const double beta2 = 0.0009;
 
     std::vector<double> _atomicRadii;
     std::vector<double> _scaleFactors;

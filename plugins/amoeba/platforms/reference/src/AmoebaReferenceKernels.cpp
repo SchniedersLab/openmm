@@ -43,6 +43,7 @@
 #include "SimTKReference/AmoebaReferenceHippoNonbondedForce.h"
 
 #include <cmath>
+
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
@@ -295,6 +296,7 @@ AmoebaReferenceMultipoleForce* ReferenceCalcAmoebaMultipoleForceKernel::setupAmo
         amoebaReferenceGeneralizedKirkwoodForce->setSurfaceAreaFactor(gkKernel->getSurfaceAreaFactor());
         amoebaReferenceGeneralizedKirkwoodForce->setIncludeCavityTerm(gkKernel->getIncludeCavityTerm());
         amoebaReferenceGeneralizedKirkwoodForce->setDirectPolarization(gkKernel->getDirectPolarization());
+        amoebaReferenceGeneralizedKirkwoodForce->setTanhRescaling(gkKernel->getTanhRescaling());
 
         vector<double> parameters; 
         gkKernel->getAtomicRadii(parameters);
@@ -597,7 +599,6 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getNeckFactors(std::vect
 void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& system, const AmoebaGeneralizedKirkwoodForce& force) {
 
     // check that AmoebaMultipoleForce is present
-
     const AmoebaMultipoleForce* amoebaMultipoleForce = NULL;
     for (int ii = 0; ii < system.getNumForces() && amoebaMultipoleForce == NULL; ii++) {
         amoebaMultipoleForce = dynamic_cast<const AmoebaMultipoleForce*>(&system.getForce(ii));
@@ -638,7 +639,7 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System&
     soluteDielectric   = force.getSoluteDielectric();
     solventDielectric  = force.getSolventDielectric();
     dielectricOffset   = 0.009;
-    probeRadius        = force.getProbeRadius(), 
+    probeRadius        = force.getProbeRadius();
     surfaceAreaFactor  = force.getSurfaceAreaFactor(); 
     directPolarization = amoebaMultipoleForce->getPolarizationType() == AmoebaMultipoleForce::Direct ? 1 : 0;
 }
@@ -649,6 +650,7 @@ double ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::execute(ContextImpl& c
 }
 
 void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::copyParametersToContext(ContextImpl& context, const AmoebaGeneralizedKirkwoodForce& force) {
+
     if (numParticles != force.getNumParticles())
         throw OpenMMException("updateParametersInContext: The number of particles has changed");
 

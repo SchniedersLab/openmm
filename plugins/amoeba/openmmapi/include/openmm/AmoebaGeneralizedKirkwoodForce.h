@@ -165,13 +165,17 @@ public:
      * Get the flag signaling whether the solute integral is rescaled by a Tanh function
      * to account for interstitial spaces.
     */
-    int getTanhRescaling() const;
+    int getTanhRescaling() const {
+        return tanhRescaling;
+    }
 
     /**
      * Set the flag signaling whether the solute integral is rescaled by a Tanh function
      * to account for interstitial spaces.
     */
-    void setTanhRescaling(int tanhRescaling);
+    void setTanhRescaling(int tanhRescale) {
+        tanhRescaling = tanhRescale;
+    }
 
     /**
      * Get the flag signaling whether the cavity term should be included

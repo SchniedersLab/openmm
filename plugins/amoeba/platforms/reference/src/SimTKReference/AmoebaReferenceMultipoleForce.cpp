@@ -2099,7 +2099,7 @@ AmoebaReferenceGeneralizedKirkwoodMultipoleForce::AmoebaReferenceGeneralizedKirk
         AmoebaReferenceGeneralizedKirkwoodForce *amoebaReferenceGeneralizedKirkwoodForce) :
         AmoebaReferenceMultipoleForce(NoCutoff),
         _amoebaReferenceGeneralizedKirkwoodForce(amoebaReferenceGeneralizedKirkwoodForce),
-        _gkc(2.455), _beta0(0.4694), _beta1(0.0391), _beta2(0.0008) {
+        _gkc(2.455), _beta0(0.3900), _beta1(0.0290), _beta2(0.0009) {
 
     double solventDielectric = _amoebaReferenceGeneralizedKirkwoodForce->getSolventDielectric();
 
@@ -4707,7 +4707,8 @@ double AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateElectrostatic(
 }
 
 static double neckDescreenDerivative(double r, double radius, double radiusK, double sneck) {
-    double radiusWater = 1.4;
+    // Radius of water in nm.
+    double radiusWater = 0.14;
 
     if (r > radius + radiusK + 2 * radiusWater) {
         return 0.0;
@@ -4744,13 +4745,14 @@ void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRuleP
     const double bigRadius = 5.0;
     if (bornRadiusI >= bigRadius) return;
 
-    double pi43 = (4.0 / 3.0) * M_PI;
+    double third = 1.0 / 3.0;
+    double pi43 = 4.0 * third * M_PI;
 
     double lik, uik;
     double lik4, uik4;
-    double factor = -pow(M_PI, (1.0 / 3.0)) * pow(6.0, (2.0 / 3.0)) / 9.0;
+    double factor = -pow(M_PI, third) * pow(6.0, 2.0 * third) / 9.0;
     double term = pi43 / (_bornRadii[iIndex] * _bornRadii[iIndex] * _bornRadii[iIndex]);
-    term = factor / pow(term, (4.0 / 3.0));
+    term = factor / pow(term, 4.0 * third);
     if (_tanhRescaling) {
         double rhoi = _atomicRadii[iIndex];
         double rhoi3 = rhoi * rhoi * rhoi;

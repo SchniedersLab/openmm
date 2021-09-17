@@ -501,6 +501,9 @@ const static double Bij[35][35] = {
 static void getBounds(double rho, int bounds[]) {
     double calculateIndex = (rho - MINIMUM_RADIUS) / SPACING;
     int below = (int) floor(calculateIndex);
+
+    // std::cout << " getBounds rho " << rho << " index " << calculateIndex << " below " << below << std::endl;
+
     int above = below + 1;
 
     if (above >= NUM_POINTS) {
@@ -526,6 +529,9 @@ static double interpolate2D(double x1, double x2, double y1, double y2, double x
 }
 
 void AmoebaReferenceGeneralizedKirkwoodForce::getNeckConstants(double rhoDescreened, double rhoDescreening, double constants[]) {
+    // Convert the radii values from nm to A.
+    rhoDescreened = rhoDescreened * 10.0;
+    rhoDescreening = rhoDescreening * 10.0;
 
     // Determine low and high values for integration
     int boundsI[] = {0, 1};
@@ -551,13 +557,16 @@ void AmoebaReferenceGeneralizedKirkwoodForce::getNeckConstants(double rhoDescree
         aij = 0.0;
     }
 
-    constants[0] = aij;
-    constants[1] = bij;
+    // Convert aij from Ang(-11) to nm(-11)
+    constants[0] = aij * 1.0e11;
+    // Convert bij from A to nm.
+    constants[1] = bij * 0.1;
 }
 
 static double neckDescreen(double r, double radius, double radiusK, double sneck) {
 
-    double radiusWater = 1.4;
+    // Radius of water in nm.
+    double radiusWater = 0.14;
 
     // If atoms are too widely separated there is no neck formed.
     if (r > radius + radiusK + 2.0 * radiusWater) {
@@ -567,9 +576,10 @@ static double neckDescreen(double r, double radius, double radiusK, double sneck
     // Get Aij and Bij based on parameterization by Corrigan et al.
     double constants[] = {0.0, 0.0};
     AmoebaReferenceGeneralizedKirkwoodForce::getNeckConstants(radius, radiusK, constants);
-
     double aij = constants[0];
     double bij = constants[1];
+
+    // std::cout << " neckDescreen Aij " << aij << " Bij " << bij << std::endl;
 
     double rMinusBij = r - bij;
     double radiiMinusr = radius + radiusK + 2.0 * radiusWater - r;
@@ -606,6 +616,7 @@ void AmoebaReferenceGeneralizedKirkwoodForce::calculateGrycukBornRadii(const vec
         double integralStartI = max(_atomicRadii[ii], _descreenRadii[ii]);
 
         double bornSum = 0.0;
+        double neckSum = 0.0;
         for (unsigned int jj = 0; jj < _numParticles; jj++) {
 
             double sk = _descreenRadii[jj] * _scaleFactors[jj];
@@ -659,11 +670,11 @@ void AmoebaReferenceGeneralizedKirkwoodForce::calculateGrycukBornRadii(const vec
 
             double mixedNeckScale = 0.5 * (_neckFactors[ii] + _neckFactors[jj]);
             if (mixedNeckScale > 0.0) {
-                bornSum += neckDescreen(r, integralStartI, _descreenRadii[jj], mixedNeckScale);
+                neckSum += neckDescreen(r, integralStartI, _descreenRadii[jj], mixedNeckScale);
             }
         }
 
-        bornSum = bornSum * PI4_3;
+        bornSum = bornSum * PI4_3 + neckSum;
         _soluteIntegral[ii] = bornSum;
 
         double baseRadiusI3 = _atomicRadii[ii] * _atomicRadii[ii] * _atomicRadii[ii];

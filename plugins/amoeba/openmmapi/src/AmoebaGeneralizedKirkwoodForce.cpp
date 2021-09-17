@@ -97,14 +97,6 @@ void AmoebaGeneralizedKirkwoodForce::setIncludeCavityTerm(int inputIncludeCavity
     includeCavityTerm = inputIncludeCavityTerm;
 }
 
-int AmoebaGeneralizedKirkwoodForce::getTanhRescaling() const {
-    return tanhRescaling;
-}
-
-void AmoebaGeneralizedKirkwoodForce::setTanhRescaling(int inputTanhRescaling) {
-    tanhRescaling = inputTanhRescaling;
-}
-
 double AmoebaGeneralizedKirkwoodForce::getProbeRadius() const {
     return probeRadius;
 }

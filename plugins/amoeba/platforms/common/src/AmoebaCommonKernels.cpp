@@ -1759,7 +1759,15 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
         throw OpenMMException("AmoebaGeneralizedKirkwoodForce requires the System to also contain an AmoebaMultipoleForce");
     NonbondedUtilities& nb = cc.getNonbondedUtilities();
     int paddedNumAtoms = cc.getPaddedNumAtoms();
-    params.initialize<float>(cc, paddedNumAtoms * 3,"amoebaGkParams");
+    params.initialize<float>(cc, paddedNumAtoms * 4,"amoebaGkParams");
+
+    neckRadii.initialize<float>(cc, NUM_NECK_POINTS, "neckRadii");
+    neckRadii.upload(benchmarkedRadii);
+    neckA.initialize<float>( cc, NUM_NECK_POINTS * NUM_NECK_POINTS, "neckA");
+    neckA.upload(Aij);
+    neckB.initialize<float>( cc, NUM_NECK_POINTS * NUM_NECK_POINTS, "neckB");
+    neckB.upload(Bij);
+
     int elementSize = (cc.getUseDoublePrecision() ? sizeof(double) : sizeof(float));
     bornRadii.initialize(cc, paddedNumAtoms, elementSize, "bornRadii");
     field.initialize(cc, 3*paddedNumAtoms, sizeof(long long), "gkField");
@@ -1795,7 +1803,6 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
     params.upload(paramsVector);
     
     // Select the number of threads for each kernel.
-    
     double computeBornSumThreadMemory = 4*elementSize+3*sizeof(float);
     double gkForceThreadMemory = 24*elementSize;
     double chainRuleThreadMemory = 10*elementSize;
@@ -1829,6 +1836,18 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
         defines["MUTUAL_POLARIZATION"] = "";
     else if (polarizationType == AmoebaMultipoleForce::Extrapolated)
         defines["EXTRAPOLATED_POLARIZATION"] = "";
+    tanhRescaling = force.getTanhRescaling();
+    if (tanhRescaling) {
+        defines["TANH_RESCALING"] = cc.intToString(1);
+        defines["BETA0"] = cc.doubleToString(0.3900);
+        defines["BETA1"] = cc.doubleToString(0.0290);
+        defines["BETA2"] = cc.doubleToString(0.0009);
+    } else {
+        defines["TANH_RESCALING"] = cc.intToString(0);
+        defines["BETA0"] = cc.doubleToString(0.0);
+        defines["BETA1"] = cc.doubleToString(0.0);
+        defines["BETA2"] = cc.doubleToString(0.0);
+    }
     includeSurfaceArea = force.getIncludeCavityTerm();
     if (includeSurfaceArea) {
         defines["SURFACE_AREA_FACTOR"] = cc.doubleToString(force.getSurfaceAreaFactor());
@@ -1892,6 +1911,9 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::computeBornRadii(ComputeArr
         computeBornSumKernel->addArg(cc.getPosq());
         computeBornSumKernel->addArg(params);
         computeBornSumKernel->addArg();
+        computeBornSumKernel->addArg(neckRadii);
+        computeBornSumKernel->addArg(neckA);
+        computeBornSumKernel->addArg(neckB);
         reduceBornSumKernel = program->createKernel("reduceBornSum");
         reduceBornSumKernel->addArg(bornSum);
         reduceBornSumKernel->addArg(params);
@@ -1915,6 +1937,10 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::computeBornRadii(ComputeArr
         chainRuleKernel->addArg();
         chainRuleKernel->addArg();
         chainRuleKernel->addArg(params);
+        chainRuleKernel->addArg(neckRadii);
+        chainRuleKernel->addArg(neckA);
+        chainRuleKernel->addArg(neckB);
+        chainRuleKernel->addArg(bornSum);
         chainRuleKernel->addArg(bornRadii);
         chainRuleKernel->addArg(bornForce);
         ediffKernel = program->createKernel("computeEDiffForce");
@@ -1969,7 +1995,7 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::finishComputation() {
     
     chainRuleKernel->setArg(2, startTileIndex);
     chainRuleKernel->setArg(3, numTileIndices);
-    chainRuleKernel->execute(numForceThreadBlocks*chainRuleThreads, chainRuleThreads);    
+    chainRuleKernel->execute(numForceThreadBlocks*chainRuleThreads, chainRuleThreads);
     ediffKernel->setArg(7, startTileIndex);
     ediffKernel->setArg(8, numTileIndices);
     ediffKernel->execute(numForceThreadBlocks*ediffThreads, ediffThreads);
