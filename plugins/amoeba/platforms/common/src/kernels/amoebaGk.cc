@@ -6,7 +6,7 @@
 KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const float* RESTRICT params, GLOBAL real* RESTRICT bornRadii) {
 
     real bigRadius = 5.0f;
-    real RECIP_MAX_RADIUS3 = pow(bigRadius, -3.0);
+    real RECIP_MAX_RADIUS3 = POW(bigRadius, -3.0);
     real PI4_3 = 4.0 / 3.0 * M_PI;
     real INVERSE_PI4_3 = 1.0 / PI4_3;
     real ONE_THIRD = 1.0 / 3.0;
