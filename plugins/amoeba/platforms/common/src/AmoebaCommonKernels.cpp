@@ -1836,6 +1836,7 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
         defines["MUTUAL_POLARIZATION"] = "";
     else if (polarizationType == AmoebaMultipoleForce::Extrapolated)
         defines["EXTRAPOLATED_POLARIZATION"] = "";
+    defines["DIELECTRIC_OFFSET"] = cc.doubleToString(force.getDielectricOffset());
     tanhRescaling = force.getTanhRescaling();
     if (tanhRescaling) {
         defines["TANH_RESCALING"] = cc.intToString(1);

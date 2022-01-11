@@ -4778,7 +4778,7 @@ void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRuleP
     double r = sqrt(r2);
     double de = 0.0;
 
-    double baseRadiusI = max(_atomicRadii[iIndex], _descreenRadii[iIndex]);
+    double baseRadiusI = max(_atomicRadii[iIndex], _descreenRadii[iIndex]) + _dielectricOffset;
     // If atom index engulfs the descreening atom, then there is no descreening.
     if (baseRadiusI > r + sk) return;
 

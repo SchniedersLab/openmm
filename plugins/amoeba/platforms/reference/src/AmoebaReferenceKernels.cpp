@@ -638,7 +638,7 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System&
     tanhRescaling      = force.getTanhRescaling();
     soluteDielectric   = force.getSoluteDielectric();
     solventDielectric  = force.getSolventDielectric();
-    dielectricOffset   = 0.009;
+    dielectricOffset   = force.getDielectricOffset();
     probeRadius        = force.getProbeRadius();
     surfaceAreaFactor  = force.getSurfaceAreaFactor(); 
     directPolarization = amoebaMultipoleForce->getPolarizationType() == AmoebaMultipoleForce::Direct ? 1 : 0;

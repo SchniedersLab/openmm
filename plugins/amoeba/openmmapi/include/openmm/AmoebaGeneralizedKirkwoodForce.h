@@ -198,6 +198,16 @@ public:
     void setProbeRadius(double probeRadius);
 
     /**
+     * Get the offset added to the atomic radius of each atom that sets the beginning of the descreening integral.
+     */
+    double getDielectricOffset() const;
+
+    /**
+     * Set the offset added to the atomic radius of each atom that sets the beginning of the descreening integral.
+     */
+    void setDielectricOffset(double descreenOffet);
+
+    /**
      * Get the surface area factor kJ/(nm*nm) used in SASA contribution
      */
     double getSurfaceAreaFactor() const;

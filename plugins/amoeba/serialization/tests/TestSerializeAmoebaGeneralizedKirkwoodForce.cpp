@@ -49,7 +49,7 @@ void testSerialization() {
     force1.setName("custom name");
     force1.setSolventDielectric(80.0);
     force1.setSoluteDielectric(1.0);
-    //force1.setDielectricOffset(   0.09);
+    force1.setDielectricOffset(   0.09);
     force1.setProbeRadius(1.40);
     force1.setSurfaceAreaFactor(0.888);
     force1.setIncludeCavityTerm(1);
@@ -71,7 +71,7 @@ void testSerialization() {
     ASSERT_EQUAL(force1.getName(), force2.getName());
     ASSERT_EQUAL(force1.getSolventDielectric(), force2.getSolventDielectric());
     ASSERT_EQUAL(force1.getSoluteDielectric(), force2.getSoluteDielectric());
-    //ASSERT_EQUAL(force1.getDielectricOffset(),     force2.getDielectricOffset());
+    ASSERT_EQUAL(force1.getDielectricOffset(),     force2.getDielectricOffset());
     ASSERT_EQUAL(force1.getProbeRadius(), force2.getProbeRadius());
     ASSERT_EQUAL(force1.getSurfaceAreaFactor(), force2.getSurfaceAreaFactor());
     ASSERT_EQUAL(force1.getIncludeCavityTerm(), force2.getIncludeCavityTerm());

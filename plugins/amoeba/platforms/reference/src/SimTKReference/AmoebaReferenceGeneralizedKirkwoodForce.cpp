@@ -33,7 +33,7 @@ AmoebaReferenceGeneralizedKirkwoodForce::AmoebaReferenceGeneralizedKirkwoodForce
                                                                                      _directPolarization(0),
                                                                                      _soluteDielectric(1.0),
                                                                                      _solventDielectric(78.3),
-                                                                                     _dielectricOffset(0.009),
+                                                                                     _dielectricOffset(0.0),
                                                                                      _probeRadius(0.14),
                                                                                      _surfaceAreaFactor(0.0054),
                                                                                      _tanhRescaling(0) {
@@ -613,7 +613,7 @@ void AmoebaReferenceGeneralizedKirkwoodForce::calculateGrycukBornRadii(const vec
             continue;
         }
 
-        double integralStartI = max(_atomicRadii[ii], _descreenRadii[ii]);
+        double integralStartI = max(_atomicRadii[ii], _descreenRadii[ii]) + _dielectricOffset;
 
         double bornSum = 0.0;
         double neckSum = 0.0;

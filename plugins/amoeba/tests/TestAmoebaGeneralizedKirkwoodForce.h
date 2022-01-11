@@ -118,7 +118,7 @@ static void setupMultipoleAmmonia(System& system, AmoebaGeneralizedKirkwoodForce
 
     std::vector<double> hydrogenMolecularDipole(3);
     std::vector<double> hydrogenMolecularQuadrupole(9);
-    
+
     hydrogenMolecularDipole[0]     = -0.00079535;
     hydrogenMolecularDipole[1]     =  0.0;
     hydrogenMolecularDipole[2]     = -0.00873407;
@@ -280,6 +280,7 @@ static void setupMultipoleAmmonia(System& system, AmoebaGeneralizedKirkwoodForce
     amoebaGeneralizedKirkwoodForce->setSoluteDielectric(   1.0000000e+00);
     amoebaGeneralizedKirkwoodForce->setIncludeCavityTerm(includeCavityTerm);
     amoebaGeneralizedKirkwoodForce->setTanhRescaling(1);
+    amoebaGeneralizedKirkwoodForce->setDielectricOffset(0.0);
 
     // addParticle: charge, radius, scalingFactor
 
@@ -5766,6 +5767,7 @@ static void setupAndGetForcesEnergyMultipoleVillin(AmoebaMultipoleForce::Polariz
     AmoebaGeneralizedKirkwoodForce* amoebaGeneralizedKirkwoodForce  = new AmoebaGeneralizedKirkwoodForce();
     amoebaGeneralizedKirkwoodForce->setSolventDielectric(  7.8300000e+01);
     amoebaGeneralizedKirkwoodForce->setSoluteDielectric(   1.0000000e+00);
+    amoebaGeneralizedKirkwoodForce->setDielectricOffset(0.0);
     amoebaGeneralizedKirkwoodForce->setIncludeCavityTerm(includeCavityTerm);
 
     // addParticle: charge, radius, scalingFactor
@@ -7139,7 +7141,7 @@ static void testGeneralizedKirkwoodAmmoniaMutualPolarizationWithCavityTerm() {
 
     System system;
     AmoebaGeneralizedKirkwoodForce* amoebaGeneralizedKirkwoodForce  = new AmoebaGeneralizedKirkwoodForce();
-    setupMultipoleAmmonia(system, amoebaGeneralizedKirkwoodForce, AmoebaMultipoleForce::Mutual, 1);
+    setupMultipoleAmmonia(system, amoebaGeneralizedKirkwoodForce, AmoebaMultipoleForce::Mutual, 0);
     LangevinIntegrator integrator(0.0, 0.1, 0.01);
     Context context(system, integrator, platform);
     getForcesEnergyMultipoleAmmonia(context, forces, energy);
@@ -7160,7 +7162,6 @@ static void testGeneralizedKirkwoodAmmoniaMutualPolarizationWithCavityTerm() {
     // compareForcesEnergy(testName, expectedEnergy, energy, expectedForces, forces, tolerance);
     
     // Try changing the particle parameters and make sure it's still correct.
-    
     for (int i = 0; i < numberOfParticles; i++) {
         double charge, radius, scale;
         amoebaGeneralizedKirkwoodForce->getParticleParameters(i, charge, radius, scale);

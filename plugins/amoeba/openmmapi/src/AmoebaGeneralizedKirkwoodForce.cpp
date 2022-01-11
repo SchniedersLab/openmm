@@ -36,7 +36,7 @@
 
 using namespace OpenMM;
 
-AmoebaGeneralizedKirkwoodForce::AmoebaGeneralizedKirkwoodForce() : solventDielectric(78.3), soluteDielectric(1.0), dielectricOffset(0.009), includeCavityTerm(1), probeRadius(0.14), tanhRescaling(0) {
+AmoebaGeneralizedKirkwoodForce::AmoebaGeneralizedKirkwoodForce() : solventDielectric(78.3), soluteDielectric(1.0), dielectricOffset(0.0), includeCavityTerm(1), probeRadius(0.14), tanhRescaling(0) {
 
      surfaceAreaFactor = -6.0* 3.1415926535*0.0216*1000.0*0.4184;
 }
@@ -80,14 +80,13 @@ void AmoebaGeneralizedKirkwoodForce::setParticleParameters(int index, double cha
     particles[index].neckFactor = neckFactor;
 }
 
-/*
 double AmoebaGeneralizedKirkwoodForce::getDielectricOffset() const {
     return dielectricOffset;
 }
 
 void AmoebaGeneralizedKirkwoodForce::setDielectricOffset(double inputDielectricOffset) {
     dielectricOffset = inputDielectricOffset;
-} */
+}
 
 int AmoebaGeneralizedKirkwoodForce::getIncludeCavityTerm() const {
     return includeCavityTerm;
