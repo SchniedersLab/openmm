@@ -64,7 +64,8 @@ void testVdw() {
     amoebaVdwForce->setEpsilonCombiningRule(epsilonCombiningRule);
     for (int ii = 0; ii < numberOfParticles; ii++) {
         int indexIV;
-        double mass, sigma, epsilon, reduction;
+        double mass, sigma, epsilon, reduction, scaleFactor;
+        bool isAlchemical;
         std::vector< int > exclusions;
         if (ii == 0 || ii == 3) {
             mass        = 16.0;
@@ -72,12 +73,16 @@ void testVdw() {
             sigma       = 1.70250E+00;
             epsilon     = 1.10000E-01;
             reduction   = 0.0;
+            isAlchemical = false;
+            scaleFactor = 1.0;
         } else {
             mass        = 1.0;
             indexIV     = ii < 3 ? 0 : 3;
             sigma       = 1.32750E+00;
             epsilon     = 1.35000E-02;
             reduction   = 0.91;
+            isAlchemical = false;
+            scaleFactor = 1.0;
         }
 
         // exclusions
@@ -92,7 +97,7 @@ void testVdw() {
             exclusions.push_back (5);
         }
         system.addParticle(mass);
-        amoebaVdwForce->addParticle(indexIV, sigma, epsilon, reduction);
+        amoebaVdwForce->addParticle(indexIV, sigma, epsilon, reduction, isAlchemical, scaleFactor);
         amoebaVdwForce->setParticleExclusions(ii, exclusions);
     }
     LangevinIntegrator integrator(0.0, 0.1, 0.01);
@@ -133,12 +138,12 @@ void testVdw() {
     }
     for (int ii = 0; ii < amoebaVdwForce->getNumParticles();  ii++) {
         int indexIV, type;
-        double sigma, epsilon, reduction;
+        double sigma, epsilon, reduction, scaleFactor;
         bool isAlchemical;
-        amoebaVdwForce->getParticleParameters(ii, indexIV, sigma, epsilon, reduction, isAlchemical, type);
+        amoebaVdwForce->getParticleParameters(ii, indexIV, sigma, epsilon, reduction, isAlchemical, type, scaleFactor);
         sigma        *= AngstromToNm;
         epsilon      *= CalToJoule;
-        amoebaVdwForce->setParticleParameters(ii, indexIV, sigma, epsilon, reduction, isAlchemical, type);
+        amoebaVdwForce->setParticleParameters(ii, indexIV, sigma, epsilon, reduction, isAlchemical, type, scaleFactor);
     }
     Context context(system, integrator, platform);
 
@@ -163,10 +168,10 @@ void testVdw() {
     
     for (int i = 0; i < numberOfParticles; i++) {
         int indexIV, type;
-        double mass, sigma, epsilon, reduction;
+        double mass, sigma, epsilon, reduction, scaleFactor;
         bool isAlchemical;
-        amoebaVdwForce->getParticleParameters(i, indexIV, sigma, epsilon, reduction, isAlchemical, type);
-        amoebaVdwForce->setParticleParameters(i, indexIV, 0.9*sigma, 2.0*epsilon, 0.95*reduction, isAlchemical, type);
+        amoebaVdwForce->getParticleParameters(i, indexIV, sigma, epsilon, reduction, isAlchemical, type, scaleFactor);
+        amoebaVdwForce->setParticleParameters(i, indexIV, 0.9*sigma, 2.0*epsilon, 0.95*reduction, isAlchemical, type, scaleFactor);
     }
     LangevinIntegrator integrator2(0.0, 0.1, 0.01);
     Context context2(system, integrator2, platform);

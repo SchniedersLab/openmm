@@ -699,6 +699,8 @@ private:
     float currentVdwLambda;
     // Per particle alchemical flag.
     ComputeArray isAlchemical;
+    // Per particle scale factor.
+    ComputeArray scaleFactors;
 
     double dispersionCoefficient;
     ComputeArray sigmaEpsilon, atomType;

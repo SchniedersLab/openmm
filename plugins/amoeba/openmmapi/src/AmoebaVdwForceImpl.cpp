@@ -82,11 +82,11 @@ void AmoebaVdwForceImpl::createParameterMatrix(const AmoebaVdwForce& force, vect
     if (force.getUseParticleTypes()) {
         // We get the types directly from the particles.
 
-        double sigma, epsilon, reduction;
+        double sigma, epsilon, reduction, scaleFactor;
         int parent;
         bool isAlchemical;
         for (int i = 0; i < numParticles; i++)
-            force.getParticleParameters(i, parent, sigma, epsilon, reduction, isAlchemical, type[i]);
+            force.getParticleParameters(i, parent, sigma, epsilon, reduction, isAlchemical, type[i], scaleFactor);
         numTypes = force.getNumParticleTypes();
         typeSigma.resize(numTypes);
         typeEpsilon.resize(numTypes);
@@ -98,10 +98,10 @@ void AmoebaVdwForceImpl::createParameterMatrix(const AmoebaVdwForce& force, vect
 
         map<pair<double, double>, int> typeForParams;
         for (int i = 0; i < numParticles; i++) {
-            double sigma, epsilon, reduction;
+            double sigma, epsilon, reduction, scaleFactor;
             int parent, typeIndex;
             bool isAlchemical;
-            force.getParticleParameters(i, parent, sigma, epsilon, reduction, isAlchemical, typeIndex);
+            force.getParticleParameters(i, parent, sigma, epsilon, reduction, isAlchemical, typeIndex, scaleFactor);
             pair<double, double> params = make_pair(sigma, epsilon);
             map<pair<double, double>, int>::iterator entry = typeForParams.find(params);
             if (entry == typeForParams.end()) {

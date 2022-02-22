@@ -2035,11 +2035,11 @@ public:
     }
     bool areParticlesIdentical(int particle1, int particle2) {
         int iv1, iv2, type1, type2;
-        double sigma1, sigma2, epsilon1, epsilon2, reduction1, reduction2;
+        double sigma1, sigma2, epsilon1, epsilon2, reduction1, reduction2, scaleFactor1, scaleFactor2;
         bool isAlchemical1, isAlchemical2;
-        force.getParticleParameters(particle1, iv1, sigma1, epsilon1, reduction1, isAlchemical1, type1);
-        force.getParticleParameters(particle2, iv2, sigma2, epsilon2, reduction2, isAlchemical2, type2);
-        return (sigma1 == sigma2 && epsilon1 == epsilon2 && reduction1 == reduction2 && isAlchemical1 == isAlchemical2 && type1 == type2);
+        force.getParticleParameters(particle1, iv1, sigma1, epsilon1, reduction1, isAlchemical1, type1, scaleFactor1);
+        force.getParticleParameters(particle2, iv2, sigma2, epsilon2, reduction2, isAlchemical2, type2, scaleFactor2);
+        return (sigma1 == sigma2 && epsilon1 == epsilon2 && reduction1 == reduction2 && isAlchemical1 == isAlchemical2 && type1 == type2 && scaleFactor1 == scaleFactor2);
     }
 private:
     const AmoebaVdwForce& force;
@@ -2060,6 +2060,7 @@ void CommonCalcAmoebaVdwForceKernel::initialize(const System& system, const Amoe
     int paddedNumAtoms = cc.getPaddedNumAtoms();
     bondReductionAtoms.initialize<int>(cc, paddedNumAtoms, "bondReductionAtoms");
     bondReductionFactors.initialize<float>(cc, paddedNumAtoms, "bondReductionFactors");
+    scaleFactors.initialize<float>(cc, paddedNumAtoms, "scaleFactors");
     tempPosq.initialize(cc, paddedNumAtoms, cc.getUseDoublePrecision() ? sizeof(mm_double4) : sizeof(mm_float4), "tempPosq");
     tempForces.initialize<long long>(cc, 3*paddedNumAtoms, "tempForces");
     
@@ -2081,6 +2082,7 @@ void CommonCalcAmoebaVdwForceKernel::initialize(const System& system, const Amoe
     vector<float> isAlchemicalVec(paddedNumAtoms, 0);
     vector<int> bondReductionAtomsVec(paddedNumAtoms, 0);
     vector<float> bondReductionFactorsVec(paddedNumAtoms, 0);
+    vector<float> scaleFactorsVec(paddedNumAtoms, 0);
     vector<vector<int> > exclusions(cc.getNumAtoms());
 
     // Handle Alchemical parameters.
@@ -2092,17 +2094,20 @@ void CommonCalcAmoebaVdwForceKernel::initialize(const System& system, const Amoe
 
     for (int i = 0; i < force.getNumParticles(); i++) {
         int ivIndex, type;
-        double sigma, epsilon, reductionFactor;
+        double sigma, epsilon, reductionFactor, scaleFactor;
         bool alchemical;
-        force.getParticleParameters(i, ivIndex, sigma, epsilon, reductionFactor, alchemical, type);
+        force.getParticleParameters(i, ivIndex, sigma, epsilon, reductionFactor, alchemical, type, scaleFactor);
         isAlchemicalVec[i] = (alchemical) ? 1.0f : 0.0f;
         bondReductionAtomsVec[i] = ivIndex;
         bondReductionFactorsVec[i] = (float) reductionFactor;
+        scaleFactorsVec[i] = (float) scaleFactor;
         force.getParticleExclusions(i, exclusions[i]);
         exclusions[i].push_back(i);
     }
     bondReductionAtoms.upload(bondReductionAtomsVec);
     bondReductionFactors.upload(bondReductionFactorsVec);
+    scaleFactors.upload(scaleFactorsVec);
+
     if (force.getUseDispersionCorrection())
         dispersionCoefficient = AmoebaVdwForceImpl::calcDispersionCorrection(system, force);
     else
@@ -2123,6 +2128,7 @@ void CommonCalcAmoebaVdwForceKernel::initialize(const System& system, const Amoe
        nonbonded->addParameter(ComputeParameterInfo(isAlchemical, "isAlchemical", "float", 1));
        nonbonded->addArgument(ComputeParameterInfo(vdwLambda, "vdwLambda", "float", 1));
     }
+    nonbonded->addParameter(ComputeParameterInfo(scaleFactors, "scaleFactor", "float", 1));
     
     // Create the interaction kernel.
     
@@ -2155,6 +2161,7 @@ void CommonCalcAmoebaVdwForceKernel::initialize(const System& system, const Amoe
     prepareKernel->addArg(tempPosq);
     prepareKernel->addArg(bondReductionAtoms);
     prepareKernel->addArg(bondReductionFactors);
+    prepareKernel->addArg(scaleFactors);
     spreadKernel = program->createKernel("spreadForces");
     spreadKernel->addArg(cc.getLongForceBuffer());
     spreadKernel->addArg(tempForces);
@@ -2215,18 +2222,21 @@ void CommonCalcAmoebaVdwForceKernel::copyParametersToContext(ContextImpl& contex
     vector<float> isAlchemicalVec(cc.getPaddedNumAtoms(), 0);
     vector<int> bondReductionAtomsVec(cc.getPaddedNumAtoms(), 0);
     vector<float> bondReductionFactorsVec(cc.getPaddedNumAtoms(), 0);
+    vector<float> scaleFactorsVec(cc.getPaddedNumAtoms(), 0);
     for (int i = 0; i < force.getNumParticles(); i++) {
         int ivIndex, type;
-        double sigma, epsilon, reductionFactor;
+        double sigma, epsilon, reductionFactor, scaleFactor;
         bool alchemical;
-        force.getParticleParameters(i, ivIndex, sigma, epsilon, reductionFactor, alchemical, type);
+        force.getParticleParameters(i, ivIndex, sigma, epsilon, reductionFactor, alchemical, type, scaleFactor);
         isAlchemicalVec[i] = (alchemical) ? 1.0f : 0.0f;
         bondReductionAtomsVec[i] = ivIndex;
         bondReductionFactorsVec[i] = (float) reductionFactor;
+        scaleFactorsVec[i] = (float) scaleFactor;
     }
     if (hasAlchemical) isAlchemical.upload(isAlchemicalVec);
     bondReductionAtoms.upload(bondReductionAtomsVec);
     bondReductionFactors.upload(bondReductionFactorsVec);
+    scaleFactors.upload(scaleFactorsVec);
     if (force.getUseDispersionCorrection())
         dispersionCoefficient = AmoebaVdwForceImpl::calcDispersionCorrection(system, force);
     else
