@@ -1838,11 +1838,13 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
         defines["EXTRAPOLATED_POLARIZATION"] = "";
     defines["DIELECTRIC_OFFSET"] = cc.doubleToString(force.getDielectricOffset());
     tanhRescaling = force.getTanhRescaling();
+    // Max Born radius is 3 nm (30 A).
+    defines["BIG_RADIUS"] = cc.doubleToString(3.0);
     if (tanhRescaling) {
         defines["TANH_RESCALING"] = cc.intToString(1);
-        defines["BETA0"] = cc.doubleToString(0.3900);
-        defines["BETA1"] = cc.doubleToString(0.0290);
-        defines["BETA2"] = cc.doubleToString(0.0009);
+        defines["BETA0"] = cc.doubleToString(0.5316);
+        defines["BETA1"] = cc.doubleToString(0.0614);
+        defines["BETA2"] = cc.doubleToString(0.0030);
     } else {
         defines["TANH_RESCALING"] = cc.intToString(0);
         defines["BETA0"] = cc.doubleToString(0.0);

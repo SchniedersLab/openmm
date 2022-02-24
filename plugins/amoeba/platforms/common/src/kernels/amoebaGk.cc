@@ -5,8 +5,7 @@
  */
 KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const float* RESTRICT params, GLOBAL real* RESTRICT bornRadii) {
 
-    real bigRadius = 5.0f;
-    real RECIP_MAX_RADIUS3 = POW(bigRadius, -3.0);
+    real RECIP_MAX_RADIUS3 = POW(BIG_RADIUS, -3.0);
     real PI4_3 = 4.0 / 3.0 * M_PI;
     real INVERSE_PI4_3 = 1.0 / PI4_3;
     real ONE_THIRD = 1.0 / 3.0;
@@ -35,7 +34,7 @@ KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const f
         sum = PI4_3 * ir3 - sum;
 
         // If the sum is less than zero, set the Born radius to 50.0 Angstroms.
-        sum = (sum <= 0 ? bigRadius : POW(INVERSE_PI4_3 * sum, -ONE_THIRD));
+        sum = (sum <= 0 ? BIG_RADIUS : POW(INVERSE_PI4_3 * sum, -ONE_THIRD));
         bornRadii[index] = sum;
 
         // Born radius should be at least as large as its base radius.
@@ -43,9 +42,9 @@ KERNEL void reduceBornSum(GLOBAL const mm_long* RESTRICT bornSum, GLOBAL const f
             bornRadii[index] = radius;
         }
 
-        // Maximum Born radius is 50.0 Angstroms.
-        if (bornRadii[index] > bigRadius) {
-            bornRadii[index] = bigRadius;
+        // Check if we have exceeded the maximum Born radius.
+        if (bornRadii[index] > BIG_RADIUS) {
+            bornRadii[index] = BIG_RADIUS;
         }
     }
 }
@@ -90,12 +89,13 @@ DEVICE real interpolate2D(real x1, real x2, real y1, real y2, real x, real y,
 }
 
 DEVICE void getBounds(real rho, int bounds[]) {
+    // Note this function is in Angstroms.
     real MINIMUM_RADIUS = 0.80;
     real SPACING = 0.05;
     real calculateIndex = (rho - MINIMUM_RADIUS) / SPACING;
     int below = (int) floor(calculateIndex);
     int above = below + 1;
-    int NUM_POINTS = 35;
+    int NUM_POINTS = 45;
 
     if (above >= NUM_POINTS) {
         // Extrapolate up from the top table values.
@@ -133,8 +133,9 @@ DEVICE void getNeckConstants(real rhoDescreened, real rhoDescreening, real const
     int highJ = boundsJ[1];
 
     // Interpolate/Extrapolate Aij and Bij constant values
-    int lowOff = lowI * 35;
-    int highOff = highI * 35;
+    int NUM_POINTS = 45;
+    int lowOff = lowI * NUM_POINTS;
+    int highOff = highI * NUM_POINTS;
     real aij = interpolate2D(neckRadii[lowI], neckRadii[highI], neckRadii[lowJ], neckRadii[highJ],
                                rhoDescreened, rhoDescreening,
                                neckA[lowOff + lowJ], neckA[highOff + lowJ],
@@ -182,7 +183,8 @@ DEVICE real neckDescreen(real r, real radius, real radiusK, real sneck,
 
     // Use Aij and Bij to get neck integral using Equations 13 and 14 from Aguilar/Onufriev 2010 paper
     // Sneck may be based on the number of heavy atoms bound to the atom being descreened.
-    real neckIntegral = sneck * aij * power1 * power2;
+    real PI4_3 = 4.0 / 3.0 * M_PI;
+    real neckIntegral = PI4_3 * sneck * aij * power1 * power2;
 
     return neckIntegral;
 }
@@ -229,8 +231,8 @@ DEVICE real computeBornSumOneInteraction(AtomData1 atom1, AtomData1 atom2,
     real u4 = u2*u2;
     real ur = uik*r; 
     real u4r = u4*r;
-    real term = (3*(r2-sk2)+6*u2-8*ur)/u4r - (3*(r2-sk2)+6*l2-8*lr)/l4r;
-    term = term/16;
+    real term = (3.0*(r2-sk2)+6.0*u2-8.0*ur)/u4r - (3.0*(r2-sk2)+6.0*l2-8.0*lr)/l4r;
+    term = term/16.0;
     
     real neck1 = atom1.neckFactor;
     real neck2 = atom2.neckFactor;
@@ -638,22 +640,21 @@ DEVICE real neckDescreenDerivative(real r, real radius, real radiusK, real sneck
     real radiiMinusr3 = radiiMinusr * radiiMinusr * radiiMinusr;
     real radiiMinusr4 = radiiMinusr3 * radiiMinusr;
 
-    return 4.0 * (sneck * Aij * rMinusBij3 * radiiMinusr4 - sneck * Aij * rMinusBij4 * radiiMinusr3);
+    real PI4_3 = 4.0 / 3.0 * M_PI;
+
+    return 4.0 * PI4_3 * (sneck * Aij * rMinusBij3 * radiiMinusr4 - sneck * Aij * rMinusBij4 * radiiMinusr3);
 }
 
 DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, real3* force,
                                             GLOBAL const float* RESTRICT neckRadii,
                                             GLOBAL const float* RESTRICT neckA,
                                             GLOBAL const float* RESTRICT neckB) {
-    real third = 1 / (real) 3;
-    real pi43 = 4 * third * M_PI;
-    real factor = -POW(M_PI, third)*POW((real) 6, 2 * third) / 9;
+    real third = 1.0 / (real) 3.0;
+    real pi43 = 4.0 * third * M_PI;
+    real factor = -POW(M_PI, third)*POW((real) 6.0, 2.0 * third) / 9.0;
     real term = pi43/(atom1.bornRadius*atom1.bornRadius*atom1.bornRadius);
-    term = factor/POW(term, 4 * third);
+    term = factor/POW(term, 4.0 * third);
 
-    // Maximum Born radius is 50.0 Angstroms
-    real bigRadius = 5.0f;
-    
     if (TANH_RESCALING) {
         real bornSum = atom1.bornSum * pi43;
         real rhoi = atom1.radius;
@@ -666,7 +667,7 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
         real tanhTerm = tanh(BETA0 * rhoi3Psi - BETA1 * rhoi6Psi2 + BETA2 * rhoi9Psi3);
         real tanh2 = tanhTerm * tanhTerm;
         real chainRuleTerm = BETA0 * rhoi3 - 2.0 * BETA1 * rhoi6Psi + 3.0 * BETA2 * rhoi9Psi2;
-        real recipBigRad = 1.0 / bigRadius;
+        real recipBigRad = 1.0 / BIG_RADIUS;
         real recipBigRad3 = recipBigRad * recipBigRad * recipBigRad;
         real tanh_constant = pi43 * ((1.0 / rhoi3) - recipBigRad3);
         term = term * tanh_constant * chainRuleTerm * (1.0 - tanh2);
@@ -686,7 +687,7 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
     // 2) the descreening atom (2) has size zero.
     // 3) descreened atom (1) engulfs the descreening atom (2).
     // 4) descreened atom (1) has the maximum Born radius.
-    if (baseRadius <= 0 || sk <= 0.0 ||  baseRadius > r + sk || atom1.bornRadius >= bigRadius) {
+    if (baseRadius <= 0 || sk <= 0.0 ||  baseRadius > r + sk || atom1.bornRadius >= BIG_RADIUS) {
         *force = delta * de;
         return;
     }
@@ -699,24 +700,24 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
         real lik = sk - r;
         real lik4 = lik*lik;
         lik4 = lik4*lik4;
-        de += 0.25f*M_PI*(sk2-4*sk*r+17*r2)/(r2*lik4);
+        de += 0.25f*M_PI*(sk2-4.0*sk*r+17.0*r2)/(r2*lik4);
     }
     else if (r < baseRadius + sk) {
         real lik = baseRadius;
         real lik4 = lik*lik;
         lik4 = lik4*lik4;
-        de += 0.25f*M_PI*(2*atom1.radius*atom1.radius-sk2-r2)/(r2*lik4);
+        de += 0.25f*M_PI*(2.0*atom1.radius*atom1.radius-sk2-r2)/(r2*lik4);
     }
     else {
         real lik = r-sk;
         real lik4 = lik*lik;
         lik4 = lik4*lik4;
-        de += 0.25f*M_PI*(sk2-4*sk*r+r2)/(r2*lik4);
+        de += 0.25f*M_PI*(sk2-4.0*sk*r+r2)/(r2*lik4);
     }
     real uik = r+sk;
     real uik4 = uik*uik;
     uik4 = uik4*uik4;
-    de -= 0.25f*M_PI*(sk2+4*sk*r+r2)/(r2*uik4);
+    de -= 0.25f*M_PI*(sk2+4.0*sk*r+r2)/(r2*uik4);
 
     real mixedNeckScale = 0.5 * (atom1.neckFactor + atom2.neckFactor);
     if (mixedNeckScale > 0.0 && atom2.scaleFactor > 0.0) {

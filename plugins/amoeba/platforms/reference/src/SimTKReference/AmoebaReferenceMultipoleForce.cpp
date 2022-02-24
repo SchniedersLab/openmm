@@ -4729,7 +4729,8 @@ static double neckDescreenDerivative(double r, double radius, double radiusK, do
     double radiiMinusr3 = radiiMinusr * radiiMinusr * radiiMinusr;
     double radiiMinusr4 = radiiMinusr3 * radiiMinusr;
 
-    return 4.0 * (sneck * Aij * rMinusBij3 * radiiMinusr4 - sneck * Aij * rMinusBij4 * radiiMinusr3);
+    double PI4_3 = 4.0 * M_PI / 3.0;
+    return 4.0 * PI4_3 * (sneck * Aij * rMinusBij3 * radiiMinusr4 - sneck * Aij * rMinusBij4 * radiiMinusr3);
 }
 
 void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRulePairIxn(
@@ -4742,7 +4743,7 @@ void AmoebaReferenceGeneralizedKirkwoodMultipoleForce::calculateGrycukChainRuleP
 
     double bornRadiusI = _bornRadii[iIndex];
 
-    const double bigRadius = 5.0;
+    const double bigRadius = 3.0;
     if (bornRadiusI >= bigRadius) return;
 
     double third = 1.0 / 3.0;
