@@ -2099,7 +2099,7 @@ AmoebaReferenceGeneralizedKirkwoodMultipoleForce::AmoebaReferenceGeneralizedKirk
         AmoebaReferenceGeneralizedKirkwoodForce *amoebaReferenceGeneralizedKirkwoodForce) :
         AmoebaReferenceMultipoleForce(NoCutoff),
         _amoebaReferenceGeneralizedKirkwoodForce(amoebaReferenceGeneralizedKirkwoodForce),
-        _gkc(2.455), _beta0(0.3900), _beta1(0.0290), _beta2(0.0009) {
+        _gkc(2.455), _beta0(0.770), _beta1(0.280), _beta2(0.112) {
 
     double solventDielectric = _amoebaReferenceGeneralizedKirkwoodForce->getSolventDielectric();
 

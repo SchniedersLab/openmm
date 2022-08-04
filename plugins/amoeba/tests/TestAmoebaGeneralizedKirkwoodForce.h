@@ -76,7 +76,7 @@ static void checkFiniteDifferences(vector<Vec3> forces, Context &context, vector
     context.setPositions(positions3);
     State state3 = context.getState(State::Energy);
 
-    ASSERT_EQUAL_TOL(state3.getPotentialEnergy()+norm*stepSize, state2.getPotentialEnergy(), 1e-4);
+    ASSERT_EQUAL_TOL(state3.getPotentialEnergy()+norm*stepSize, state2.getPotentialEnergy(), 1e-3);
 }
 
 // setup for 2 ammonia molecules
