@@ -1855,7 +1855,7 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
     if (includeSurfaceArea) {
         defines["SURFACE_AREA_FACTOR"] = cc.doubleToString(force.getSurfaceAreaFactor());
         defines["PROBE_RADIUS"] = cc.doubleToString(force.getProbeRadius());
-        defines["DIELECTRIC_OFFSET"] = cc.doubleToString(0.009);
+        defines["DIELECTRIC_OFFSET"] = cc.doubleToString(force.getDielectricOffset());
     }
     cc.addForce(new ForceInfo(force));
 }

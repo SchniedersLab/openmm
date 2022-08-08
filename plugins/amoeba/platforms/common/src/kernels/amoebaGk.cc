@@ -614,6 +614,61 @@ inline DEVICE AtomData3 loadAtomData3(int atom, GLOBAL const real4* RESTRICT pos
     return data;
 }
 
+/**
+ * Use pairwise descreening to compute derivative of the integral of 1/r^6 with respect to r.
+ *
+ * @param r separation distance.
+ * @param r2 separation distance squared.
+ * @param radius base radius of descreened atom.
+ * @param scaledRadius scaled radius descreening atom.
+ * @return the derivative.
+ */
+DEVICE real pairIntegralDerivative(real r, real r2, real radius, real scaledRadius) {
+    
+        real de = 0.0;
+        // Descreen only if the scaledRadius is greater than zero.
+        // and atom I does not engulf atom K.
+        if (scaledRadius > 0.0 && (radius < r + scaledRadius)) {
+            // Atom i is engulfed by atom k.
+            if (radius + r < scaledRadius) {
+                real uik = scaledRadius - r;
+                real uik2 = uik * uik;
+                real uik4 = uik2 * uik2;
+                de = -4.0f * M_PI / uik4;
+            }
+
+            // Lower integration bound depends on atoms sizes and separation.
+            real sk2 = scaledRadius * scaledRadius;
+            if (radius + r < scaledRadius) {
+                // Atom i is engulfed by atom k.
+                real lik = scaledRadius - r;
+                real lik2 = lik * lik;
+                real lik4 = lik2 * lik2;
+                de = de + 0.25f * M_PI * (sk2 - 4.0f * scaledRadius * r + 17.0f * r2) / (r2 * lik4);
+            } else if (r < radius + scaledRadius) {
+                // Atoms are overlapped, begin integration from ri.
+                real lik = radius;
+                real lik2 = lik * lik;
+                real lik4 = lik2 * lik2;
+                de = de + 0.25f * M_PI * (2.0f * radius * radius - sk2 - r2) / (r2 * lik4);
+            } else {
+                // No overlap between atoms.
+                real lik = r - scaledRadius;
+                real lik2 = lik * lik;
+                real lik4 = lik2 * lik2;
+                de = de + 0.25f * M_PI * (sk2 - 4.0f * scaledRadius * r + r2) / (r2 * lik4);
+            }
+
+            // Upper integration bound is always the same.
+            real uik = r + scaledRadius;
+            real uik2 = uik * uik;
+            real uik4 = uik2 * uik2;
+            de = de - 0.25f * M_PI * (sk2 + 4.0f * scaledRadius * r + r2) / (r2 * uik4);
+        }
+        return de;
+}
+
+
 DEVICE real neckDescreenDerivative(real r, real radius, real radiusK, real sneck,
                                    GLOBAL const float* RESTRICT neckRadii,
                                    GLOBAL const float* RESTRICT neckA,
@@ -673,54 +728,21 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
         term = term * tanh_constant * chainRuleTerm * (1.0 - tanh2);
     }
 
+    real de = 0.0;
     real3 delta = atom2.pos-atom1.pos;
-
-    real sk = atom2.scaleFactor * atom2.descreenRadius;
-    real baseRadius = max(atom1.radius, atom1.descreenRadius) + DIELECTRIC_OFFSET;
-    real sk2 = sk*sk;
-    real r2 = dot(delta, delta);
-    real r = SQRT(r2);
-    real de = 0;
-
-    // No descreening due:
-    // 1) the descreened atom (1) has size zero.
-    // 2) the descreening atom (2) has size zero.
-    // 3) descreened atom (1) engulfs the descreening atom (2).
-    // 4) descreened atom (1) has the maximum Born radius.
-    if (baseRadius <= 0 || sk <= 0.0 ||  baseRadius > r + sk || atom1.bornRadius >= BIG_RADIUS) {
+    real sk = atom2.scaleFactor;
+    if (sk <= 0.0 || atom1.bornRadius >= BIG_RADIUS || atom2.descreenRadius <= 0.0) {
         *force = delta * de;
         return;
     }
 
-    if (baseRadius + r < sk) {
-        real uik = sk-r;
-        real uik4 = uik*uik;
-        uik4 = uik4*uik4;
-        de = -4*M_PI/uik4;
-        real lik = sk - r;
-        real lik4 = lik*lik;
-        lik4 = lik4*lik4;
-        de += 0.25f*M_PI*(sk2-4.0*sk*r+17.0*r2)/(r2*lik4);
-    }
-    else if (r < baseRadius + sk) {
-        real lik = baseRadius;
-        real lik4 = lik*lik;
-        lik4 = lik4*lik4;
-        de += 0.25f*M_PI*(2.0*atom1.radius*atom1.radius-sk2-r2)/(r2*lik4);
-    }
-    else {
-        real lik = r-sk;
-        real lik4 = lik*lik;
-        lik4 = lik4*lik4;
-        de += 0.25f*M_PI*(sk2-4.0*sk*r+r2)/(r2*lik4);
-    }
-    real uik = r+sk;
-    real uik4 = uik*uik;
-    uik4 = uik4*uik4;
-    de -= 0.25f*M_PI*(sk2+4.0*sk*r+r2)/(r2*uik4);
+    real baseRadius = max(atom1.radius, atom1.descreenRadius) + DIELECTRIC_OFFSET;
+    real r2 = dot(delta, delta);
+    real r = SQRT(r2);
+    de = pairIntegralDerivative(r, r2, baseRadius, sk * atom2.descreenRadius);
 
     real mixedNeckScale = 0.5 * (atom1.neckFactor + atom2.neckFactor);
-    if (mixedNeckScale > 0.0 && atom2.scaleFactor > 0.0) {
+    if (mixedNeckScale > 0.0) {
         de += neckDescreenDerivative(r, baseRadius, atom2.descreenRadius, mixedNeckScale, neckRadii, neckA, neckB);
     }
 
@@ -728,6 +750,8 @@ DEVICE void computeBornChainRuleInteraction(AtomData3 atom1, AtomData3 atom2, re
     de = dbr*atom1.bornForce;
     *force = delta*de;
 }
+
+
 
 /**
  * Compute chain rule terms.
