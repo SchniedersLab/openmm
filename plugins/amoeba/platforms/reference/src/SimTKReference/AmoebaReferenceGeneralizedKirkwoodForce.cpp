@@ -36,7 +36,10 @@ AmoebaReferenceGeneralizedKirkwoodForce::AmoebaReferenceGeneralizedKirkwoodForce
                                                                                      _dielectricOffset(0.0),
                                                                                      _probeRadius(0.14),
                                                                                      _surfaceAreaFactor(0.0054),
-                                                                                     _tanhRescaling(0) {
+                                                                                     _tanhRescaling(0),
+                                                                                     _beta0(0.770),
+                                                                                     _beta1(0.280),
+                                                                                     _beta2(0.112) {
 
 }
 
@@ -62,6 +65,25 @@ void AmoebaReferenceGeneralizedKirkwoodForce::setTanhRescaling(int tanhRescaling
 
 int AmoebaReferenceGeneralizedKirkwoodForce::getTanhRescaling() const {
     return _tanhRescaling;
+}
+
+/**
+ * Get Tanh parameters beta0, beta1 and beta2.
+ */
+void AmoebaReferenceGeneralizedKirkwoodForce::getTanhParameters(double& b0, double& b1, double& b2) const {
+    b0 = _beta0;
+    b1 = _beta1;
+    b2 = _beta2;
+}
+
+/**
+ * Set the flag signaling whether the solute integral is rescaled by a Tanh function
+ * to account for interstitial spaces.
+*/
+void AmoebaReferenceGeneralizedKirkwoodForce::setTanhParameters(double b0, double b1, double b2) {
+    _beta0 = b0;
+    _beta1 = b1;
+    _beta2 = b2;
 }
 
 void AmoebaReferenceGeneralizedKirkwoodForce::setDirectPolarization(int directPolarization) {
@@ -824,7 +846,7 @@ void AmoebaReferenceGeneralizedKirkwoodForce::calculateGrycukBornRadii(const vec
             double rhoi9Psi3 = rhoi6Psi2 * rhoi3Psi;
             // If the output of the tanh function is 1.0, then the Born radius will be MaxBornRadius
             double tanh_constant = PI4_3 * ((1.0 / baseRadiusI3) - RECIP_MAX_RADIUS3);
-            bornSum = tanh_constant * tanh(beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3);
+            bornSum = tanh_constant * tanh(_beta0 * rhoi3Psi - _beta1 * rhoi6Psi2 + _beta2 * rhoi9Psi3);
         }
 
         bornSum = PI4_3 / baseRadiusI3 - bornSum;

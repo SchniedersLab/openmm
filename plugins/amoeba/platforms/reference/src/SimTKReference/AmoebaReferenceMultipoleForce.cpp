@@ -2119,6 +2119,7 @@ AmoebaReferenceGeneralizedKirkwoodMultipoleForce::AmoebaReferenceGeneralizedKirk
     _surfaceAreaFactor = _amoebaReferenceGeneralizedKirkwoodForce->getSurfaceAreaFactor();
     _dielectricOffset = _amoebaReferenceGeneralizedKirkwoodForce->getDielectricOffset();
     _tanhRescaling = _amoebaReferenceGeneralizedKirkwoodForce->getTanhRescaling();
+    _amoebaReferenceGeneralizedKirkwoodForce->getTanhParameters(_beta0, _beta1, _beta2);
 }
 
 AmoebaReferenceGeneralizedKirkwoodMultipoleForce::~AmoebaReferenceGeneralizedKirkwoodMultipoleForce() {

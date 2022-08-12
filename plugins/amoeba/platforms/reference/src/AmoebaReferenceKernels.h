@@ -328,6 +328,11 @@ public:
     int getTanhRescaling() const;
 
     /**
+     * Get Tanh parameters beta0, beta1 and beta2.
+     */
+    void getTanhParameters(double& b0, double& b1, double& b2) const;
+
+    /**
      *  Get the number of particles.
      *
      *  @return number of particles
@@ -445,6 +450,9 @@ private:
     double surfaceAreaFactor;
     int includeCavityTerm;
     int tanhRescaling;
+    double beta0;
+    double beta1;
+    double beta2;
     int directPolarization;
     const System& system;
 };

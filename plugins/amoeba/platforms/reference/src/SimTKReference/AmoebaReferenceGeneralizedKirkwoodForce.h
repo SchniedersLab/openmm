@@ -89,6 +89,17 @@ public:
     int getTanhRescaling() const;
 
     /**
+     * Get Tanh parameters beta0, beta1 and beta2.
+    */
+    void getTanhParameters(double& b0, double& b1, double& b2) const;
+
+    /**
+     * Set the flag signaling whether the solute integral is rescaled by a Tanh function
+     * to account for interstitial spaces.
+    */
+    void setTanhParameters(double b0, double b1, double b2);
+
+    /**
      *  Set tanhRescaling flag
      *
      *  @param tanhRescaling flag indicating whether tanh rescaling of the solute integral is performed.
@@ -298,9 +309,9 @@ private:
     double _probeRadius;
     double _surfaceAreaFactor;
 
-    const double beta0 = 0.770;
-    const double beta1 = 0.280;
-    const double beta2 = 0.112;
+    double _beta0;
+    double _beta1;
+    double _beta2;
 
     std::vector<double> _atomicRadii;
     std::vector<double> _scaleFactors;

@@ -297,6 +297,9 @@ AmoebaReferenceMultipoleForce* ReferenceCalcAmoebaMultipoleForceKernel::setupAmo
         amoebaReferenceGeneralizedKirkwoodForce->setIncludeCavityTerm(gkKernel->getIncludeCavityTerm());
         amoebaReferenceGeneralizedKirkwoodForce->setDirectPolarization(gkKernel->getDirectPolarization());
         amoebaReferenceGeneralizedKirkwoodForce->setTanhRescaling(gkKernel->getTanhRescaling());
+        double beta0, beta1, beta2;
+        gkKernel->getTanhParameters(beta0, beta1, beta2);
+        amoebaReferenceGeneralizedKirkwoodForce->setTanhParameters(beta0, beta1, beta2);
 
         vector<double> parameters; 
         gkKernel->getAtomicRadii(parameters);
@@ -545,6 +548,12 @@ int ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getIncludeCavityTerm() co
 
 int ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getTanhRescaling() const {
     return tanhRescaling;
+}
+
+void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getTanhParameters(double &b0, double &b1, double &b2) const {
+    b0 = beta0;
+    b1 = beta1;
+    b2 = beta2;
 }
 
 int ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::getDirectPolarization() const {

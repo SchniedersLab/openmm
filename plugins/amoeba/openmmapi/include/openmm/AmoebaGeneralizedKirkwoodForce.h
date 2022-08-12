@@ -178,6 +178,25 @@ public:
     }
 
     /**
+     * Get Tanh parameters beta0, beta1 and beta2.
+     */
+    void getTanhParameters(double& b0, double& b1, double& b2) const {
+        b0 = this->beta0;
+        b1 = this->beta1;
+        b2 = this->beta2;
+    }
+
+    /**
+     * Set the flag signaling whether the solute integral is rescaled by a Tanh function
+     * to account for interstitial spaces.
+    */
+    void setTanhParameters(double b0, double b1, double b2) {
+        this->beta0 = b0;
+        this->beta1 = b1;
+        this->beta2 = b2;
+    }
+
+    /**
      * Get the flag signaling whether the cavity term should be included
      */
     int getIncludeCavityTerm() const;
@@ -243,6 +262,7 @@ private:
     int tanhRescaling;
     double solventDielectric, soluteDielectric, dielectricOffset,
            probeRadius, surfaceAreaFactor;
+    double beta0, beta1, beta2;
     std::vector<ParticleInfo> particles;
 };
 

@@ -1842,9 +1842,11 @@ void CommonCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System& sy
     defines["BIG_RADIUS"] = cc.doubleToString(3.0);
     if (tanhRescaling) {
         defines["TANH_RESCALING"] = cc.intToString(1);
-        defines["BETA0"] = cc.doubleToString(0.770);
-        defines["BETA1"] = cc.doubleToString(0.280);
-        defines["BETA2"] = cc.doubleToString(0.112);
+        double beta0, beta1, beta2;
+        force.getTanhParameters(beta0, beta1, beta2);
+        defines["BETA0"] = cc.doubleToString(beta0);
+        defines["BETA1"] = cc.doubleToString(beta1);
+        defines["BETA2"] = cc.doubleToString(beta2);
     } else {
         defines["TANH_RESCALING"] = cc.intToString(0);
         defines["BETA0"] = cc.doubleToString(0.0);
