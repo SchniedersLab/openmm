@@ -645,6 +645,11 @@ void ReferenceCalcAmoebaGeneralizedKirkwoodForceKernel::initialize(const System&
     }   
     includeCavityTerm  = force.getIncludeCavityTerm();
     tanhRescaling      = force.getTanhRescaling();
+    double b0, b1, b2;
+    force.getTanhParameters(b0, b1, b2);
+    beta0 = b0;
+    beta1 = b1;
+    beta2 = b2;
     soluteDielectric   = force.getSoluteDielectric();
     solventDielectric  = force.getSolventDielectric();
     dielectricOffset   = force.getDielectricOffset();
