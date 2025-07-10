@@ -357,6 +357,8 @@ private:
 
     // True if the AmoebaVdwForce AlchemicalMethod is not None.
     bool hasAlchemical;
+    // True if the AmoebaVdwForce should apply the complement of lambda.
+    bool useLambdaComplement;
     // Device memory for the alchemical state.
     ComputeArray vdwLambda;
     // Only update device memory when lambda changes.

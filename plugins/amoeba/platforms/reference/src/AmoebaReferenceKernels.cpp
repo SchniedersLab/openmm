@@ -679,6 +679,7 @@ ReferenceCalcAmoebaVdwForceKernel::ReferenceCalcAmoebaVdwForceKernel(const std::
        CalcAmoebaVdwForceKernel(name, platform), system(system) {
     useCutoff = 0;
     usePBC = 0;
+    useLambdaComplement = false;
     cutoff = 1.0e+10;
     neighborList = NULL;
 }
@@ -695,6 +696,7 @@ void ReferenceCalcAmoebaVdwForceKernel::initialize(const System& system, const A
     numParticles = system.getNumParticles();
     useCutoff              = (force.getNonbondedMethod() != AmoebaVdwForce::NoCutoff);
     usePBC                 = (force.getNonbondedMethod() == AmoebaVdwForce::CutoffPeriodic);
+    useLambdaComplement    = force.getUseLambdaComplement();
     cutoff                 = force.getCutoffDistance();
     neighborList           = useCutoff ? new NeighborList() : NULL;
     dispersionCoefficient  = force.getUseDispersionCorrection() ?  AmoebaVdwForceImpl::calcDispersionCorrection(system, force) : 0.0;
@@ -707,6 +709,9 @@ double ReferenceCalcAmoebaVdwForceKernel::execute(ContextImpl& context, bool inc
     vector<Vec3>& forceData = extractForces(context);
     double energy;
     double lambda = context.getParameter(AmoebaVdwForce::Lambda());
+    if (useLambdaComplement) {
+        lambda = 1.0 - lambda;
+    }
     if (useCutoff) {
         computeNeighborListVoxelHash(*neighborList, numParticles, posData, vdwForce.getExclusions(), extractBoxVectors(context), usePBC, cutoff, 0.0);
         if (usePBC) {

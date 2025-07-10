@@ -326,6 +326,16 @@ public:
     }
 
     /**
+     * Get whether the value of lambda will be applied as lambda = 1.0 - AmoebaVdwLambda.
+     * This useful for dual-topology calculations with two AmoebaVdWForce objects. The first topology uses
+     * AmoebaVdWForce with lambda = AmoebaVdwLambda and the second topology uses its complement as
+     * lambda = 1.0 - AmoebaVdwLambda.
+     */
+    bool getUseLambdaComplement() const {
+        return useLambdaComplement;
+    }
+
+    /**
      * Set whether to add a contribution to the energy that approximately represents the effect of VdW
      * interactions beyond the cutoff distance.  The energy depends on the volume of the periodic box, and is only
      * applicable when periodic boundary conditions are used.  When running simulations at constant pressure, adding
@@ -333,6 +343,16 @@ public:
      */
     void setUseDispersionCorrection(bool useCorrection) {
         useDispersionCorrection = useCorrection;
+    }
+
+    /**
+     * Set whether the value of lambda will be applied as lambda = 1.0 - AmoebaVdwLambda.
+     * This useful for dual-topology calculations with two AmoebaVdWForce objects. The first topology uses
+     * AmoebaVdWForce with lambda = AmoebaVdwLambda and the second topology uses its complement as
+     * lambda = 1.0 - AmoebaVdwLambda.
+     */
+    void setUseLambdaComplement(bool useComplement) {
+        useLambdaComplement = useComplement;
     }
     
     /**
@@ -476,6 +496,7 @@ private:
     AlchemicalMethod alchemicalMethod;
     int n;
     double alpha;
+    bool useLambdaComplement;
 
     std::string sigmaCombiningRule;
     std::string epsilonCombiningRule;

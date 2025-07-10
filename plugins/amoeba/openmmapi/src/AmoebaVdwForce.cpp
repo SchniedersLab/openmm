@@ -41,7 +41,7 @@ using std::vector;
 
 AmoebaVdwForce::AmoebaVdwForce() : nonbondedMethod(NoCutoff), potentialFunction(Buffered147),
         sigmaCombiningRule("CUBIC-MEAN"), epsilonCombiningRule("HHG"), cutoff(1.0e+10), useDispersionCorrection(true),
-        useTypes(false), alchemicalMethod(None), n(5), alpha(0.7) {
+        useTypes(false), alchemicalMethod(None), n(5), alpha(0.7), useLambdaComplement(false) {
 }
 
 int AmoebaVdwForce::addParticle(int parentIndex, double sigma, double epsilon, double reductionFactor, bool isAlchemical, double scaleFactor) {

@@ -42,7 +42,7 @@ AmoebaVdwForceProxy::AmoebaVdwForceProxy() : SerializationProxy("AmoebaVdwForce"
 }
 
 void AmoebaVdwForceProxy::serialize(const void* object, SerializationNode& node) const {
-    node.setIntProperty("version", 5);
+    node.setIntProperty("version", 6);
     const AmoebaVdwForce& force = *reinterpret_cast<const AmoebaVdwForce*>(object);
     bool useTypes = force.getUseParticleTypes();
 
@@ -52,12 +52,12 @@ void AmoebaVdwForceProxy::serialize(const void* object, SerializationNode& node)
     node.setStringProperty("EpsilonCombiningRule", force.getEpsilonCombiningRule());
     node.setDoubleProperty("VdwCutoff", force.getCutoffDistance());
     node.setIntProperty("method", (int) force.getNonbondedMethod());
-
     node.setDoubleProperty("n", force.getSoftcorePower());
     node.setDoubleProperty("alpha", force.getSoftcoreAlpha());
     node.setIntProperty("alchemicalMethod", (int) force.getAlchemicalMethod());
     node.setIntProperty("potentialFunction", (int) force.getPotentialFunction());
     node.setBoolProperty("useTypes", useTypes);
+    node.setBoolProperty("useLambdaComplement", force.getUseLambdaComplement());
 
     SerializationNode& particles = node.createChildNode("VdwParticles");
     for (int i = 0; i < force.getNumParticles(); i++) {
@@ -98,7 +98,7 @@ void AmoebaVdwForceProxy::serialize(const void* object, SerializationNode& node)
 
 void* AmoebaVdwForceProxy::deserialize(const SerializationNode& node) const {
     int version = node.getIntProperty("version");
-    if (version < 1 || version > 5)
+    if (version < 1 || version > 6)
         throw OpenMMException("Unsupported version number");
     AmoebaVdwForce* force = new AmoebaVdwForce();
     try {
@@ -118,7 +118,13 @@ void* AmoebaVdwForceProxy::deserialize(const SerializationNode& node) const {
         bool useTypes = false;
         if (version > 3) {
             useTypes = node.getBoolProperty("useTypes");
-           force->setPotentialFunction((AmoebaVdwForce::PotentialFunction) node.getIntProperty("potentialFunction"));
+            force->setPotentialFunction((AmoebaVdwForce::PotentialFunction) node.getIntProperty("potentialFunction"));
+        }
+
+        bool useLambdaComplement = false;
+        if (version > 5) {
+            useLambdaComplement = node.getBoolProperty("useLambdaComplement");
+            force->setUseLambdaComplement(useLambdaComplement);
         }
 
         const SerializationNode& particles = node.getChildNode("VdwParticles");

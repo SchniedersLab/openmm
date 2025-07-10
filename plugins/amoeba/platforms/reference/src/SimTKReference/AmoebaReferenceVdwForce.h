@@ -126,6 +126,7 @@ private:
     AmoebaVdwForce::PotentialFunction potentialFunction;
     double _n;
     double _alpha;
+    double _useLambdaComplement;
     double _cutoff;
     double _taperCutoffFactor;
     double _taperCutoff;
