@@ -114,7 +114,13 @@ double AmoebaReferenceVdwForce::calculatePairIxn(double combinedSigma, double co
                                                  const Vec3& particleIPosition,
                                                  const Vec3& particleJPosition,
                                                  Vec3& force) const {
-    
+
+    // If epsilon or either atom's scale factor is zero, the energy is zero (including at r=0).
+    if (combinedEpsilon == 0.0) {
+        force[0] = force[1] = force[2] = 0.0;
+        return 0.0;
+    }
+
     static const double dhal = 0.07;
     static const double ghal = 0.12;
     static const double dhal1 = 1.07;

@@ -151,6 +151,12 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, re
         return;
     real scale1, scale2, scale3;
     real r2 = dot(deltaR, deltaR);
+
+    // If an atom is alchemical and has no moments (e.g, while growing in vdW), it's valid to be superimposed on another atom.
+    // This avoids divide by zero below.
+    if (!(r2 > 0))
+        return;
+
     if (r2 < CUTOFF_SQUARED) {
         real rI = RSQRT(r2);
         real r = RECIP(rI);
@@ -317,7 +323,14 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, re
 DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, real3 deltaR, bool isSelfInteraction) {
     if (isSelfInteraction)
         return;
-    real rI = RSQRT(dot(deltaR, deltaR));
+    real r2 = dot(deltaR, deltaR);
+
+    // If an atom is alchemical and has no moments (e.g, while growing in vdW), it's valid to be superimposed on another atom.
+    // This avoids divide by zero below.
+    if (!(r2 > 0))
+        return;
+
+    real rI = RSQRT(r2);
     real r = RECIP(rI);
     real r2I = rI*rI;
     real rr3 = -rI*r2I;

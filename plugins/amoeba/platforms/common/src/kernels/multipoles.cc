@@ -1,11 +1,13 @@
 #define GROUP_SIZE 128
 
-KERNEL void computeLabFrameMoments(GLOBAL real4* RESTRICT posq, GLOBAL int4* RESTRICT multipoleParticles, GLOBAL float* RESTRICT molecularDipoles,
-        GLOBAL float* RESTRICT molecularQuadrupoles, GLOBAL real* RESTRICT labFrameDipoles, GLOBAL real* RESTRICT labFrameQuadrupoles,
+KERNEL void computeLabFrameMoments(GLOBAL real4* RESTRICT posq, GLOBAL int4* RESTRICT multipoleParticles,
+        GLOBAL float* RESTRICT molecularCharges, GLOBAL float* RESTRICT molecularDipoles,GLOBAL float* RESTRICT molecularQuadrupoles,
+        GLOBAL real* RESTRICT labFrameDipoles, GLOBAL real* RESTRICT labFrameQuadrupoles,
         GLOBAL real* RESTRICT sphericalDipoles, GLOBAL real* RESTRICT sphericalQuadrupoles) {
     for (int atom = GLOBAL_ID; atom < NUM_ATOMS; atom += GLOBAL_SIZE) {
+        // Load the charge. This permits using two AmoebaMultipoleForce instances with different moments.
+        posq[atom].w = molecularCharges[atom];
         // Load the spherical multipoles.
-        
         int offset = 3*atom;
         sphericalDipoles[offset+0] = molecularDipoles[offset+2]; // z -> Q_10
         sphericalDipoles[offset+1] = molecularDipoles[offset+0]; // x -> Q_11c

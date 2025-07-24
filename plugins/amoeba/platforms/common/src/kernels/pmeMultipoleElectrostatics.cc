@@ -70,6 +70,12 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, bo
     delta.z = atom2->pos.z - atom1->pos.z;
     APPLY_PERIODIC_TO_DELTA(delta)
     real r2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
+
+    // If an atom is alchemical and has no moments (e.g., while growing in vdW), it's valid to be superimposed on another atom.
+    // This avoids divide by zero below.
+    if (!(r2 > 0))
+        return;
+
     if (r2 > CUTOFF_SQUARED)
         return;
 

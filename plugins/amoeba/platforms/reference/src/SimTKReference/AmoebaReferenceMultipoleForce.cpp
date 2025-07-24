@@ -280,6 +280,26 @@ double AmoebaReferenceMultipoleForce::normalizeVec3(Vec3& vectorToNormalize) con
     return norm;
 }
 
+bool AmoebaReferenceMultipoleForce::isCartMultipoleNonZero(const MultipoleParticleData& particle) {
+    if (particle.charge != 0.0 ||
+        particle.dipole[0] != 0.0 || particle.dipole[1] != 0.0 || particle.dipole[2] != 0.0 ||
+        particle.quadrupole[QXY] != 0.0 || particle.quadrupole[QYZ] != 0.0 || particle.quadrupole[QXZ] != 0.0 ||
+        particle.quadrupole[QXX] != 0.0 || particle.quadrupole[QYY] != 0.0 || particle.quadrupole[QZZ] != 0.0) {
+        return true;
+    }
+    return false;
+}
+
+bool AmoebaReferenceMultipoleForce::isSphericalMultipoleNonZero(const MultipoleParticleData& particle) {
+    if (particle.charge != 0.0 ||
+        particle.sphericalDipole[0] != 0.0 || particle.sphericalDipole[1] != 0.0 || particle.sphericalDipole[2] != 0.0 ||
+        particle.sphericalQuadrupole[0] != 0.0 || particle.sphericalQuadrupole[1] != 0.0 || particle.sphericalQuadrupole[2] != 0.0 ||
+        particle.sphericalQuadrupole[3] != 0.0 || particle.sphericalQuadrupole[4] != 0.0) {
+        return true;
+    }
+    return false;
+}
+
 void AmoebaReferenceMultipoleForce::initializeRealOpenMMVector(vector<double>& vectorToInitialize) const
 {
     double zero = 0.0;
@@ -723,35 +743,43 @@ void AmoebaReferenceMultipoleForce::calculateFixedMultipoleFieldPairIxn(const Mu
 
     // field at particle I due multipoles at particle J
 
-    Vec3 qDotDelta;
-    qDotDelta[0]                            = deltaR[0]*particleJ.quadrupole[QXX] + deltaR[1]*particleJ.quadrupole[QXY] + deltaR[2]*particleJ.quadrupole[QXZ];
-    qDotDelta[1]                            = deltaR[0]*particleJ.quadrupole[QXY] + deltaR[1]*particleJ.quadrupole[QYY] + deltaR[2]*particleJ.quadrupole[QYZ];
-    qDotDelta[2]                            = deltaR[0]*particleJ.quadrupole[QXZ] + deltaR[1]*particleJ.quadrupole[QYZ] + deltaR[2]*particleJ.quadrupole[QZZ];
+    if (particleI.polarity > 0.0 && isCartMultipoleNonZero(particleJ)) {
+        Vec3 qDotDelta;
+        qDotDelta[0]                            = deltaR[0]*particleJ.quadrupole[QXX] + deltaR[1]*particleJ.quadrupole[QXY] + deltaR[2]*particleJ.quadrupole[QXZ];
+        qDotDelta[1]                            = deltaR[0]*particleJ.quadrupole[QXY] + deltaR[1]*particleJ.quadrupole[QYY] + deltaR[2]*particleJ.quadrupole[QYZ];
+        qDotDelta[2]                            = deltaR[0]*particleJ.quadrupole[QXZ] + deltaR[1]*particleJ.quadrupole[QYZ] + deltaR[2]*particleJ.quadrupole[QZZ];
 
-    double dipoleDelta                      = particleJ.dipole.dot(deltaR);
-    double qdpoleDelta                      = qDotDelta.dot(deltaR);
-    double factor                           = rr3*particleJ.charge - rr5*dipoleDelta + rr7*qdpoleDelta;
+        double dipoleDelta                      = particleJ.dipole.dot(deltaR);
+        double qdpoleDelta                      = qDotDelta.dot(deltaR);
+        double factor                           = rr3*particleJ.charge - rr5*dipoleDelta + rr7*qdpoleDelta;
 
-    Vec3 field                              = deltaR*factor + particleJ.dipole*rr3 - qDotDelta*rr5_2;
+        Vec3 field                              = deltaR*factor + particleJ.dipole*rr3 - qDotDelta*rr5_2;
 
-    unsigned int particleIndex                = particleI.particleIndex;
-    _fixedMultipoleField[particleIndex]      -= field*dScale;
-    _fixedMultipoleFieldPolar[particleIndex] -= field*pScale;
+        unsigned int particleIndex                = particleI.particleIndex;
+        _fixedMultipoleField[particleIndex]      -= field*dScale;
+        _fixedMultipoleFieldPolar[particleIndex] -= field*pScale;
+    }
 
     // field at particle J due multipoles at particle I
 
-    qDotDelta[0]                              = deltaR[0]*particleI.quadrupole[QXX] + deltaR[1]*particleI.quadrupole[QXY] + deltaR[2]*particleI.quadrupole[QXZ];
-    qDotDelta[1]                              = deltaR[0]*particleI.quadrupole[QXY] + deltaR[1]*particleI.quadrupole[QYY] + deltaR[2]*particleI.quadrupole[QYZ];
-    qDotDelta[2]                              = deltaR[0]*particleI.quadrupole[QXZ] + deltaR[1]*particleI.quadrupole[QYZ] + deltaR[2]*particleI.quadrupole[QZZ];
+    if (particleJ.polarity > 0.0 && isCartMultipoleNonZero(particleI)) {
+        Vec3 qDotDelta;
+        qDotDelta[0] = deltaR[0] * particleI.quadrupole[QXX] + deltaR[1] * particleI.quadrupole[QXY] +
+                       deltaR[2] * particleI.quadrupole[QXZ];
+        qDotDelta[1] = deltaR[0] * particleI.quadrupole[QXY] + deltaR[1] * particleI.quadrupole[QYY] +
+                       deltaR[2] * particleI.quadrupole[QYZ];
+        qDotDelta[2] = deltaR[0] * particleI.quadrupole[QXZ] + deltaR[1] * particleI.quadrupole[QYZ] +
+                       deltaR[2] * particleI.quadrupole[QZZ];
 
-    dipoleDelta                               = particleI.dipole.dot(deltaR);
-    qdpoleDelta                               = qDotDelta.dot(deltaR);
-    factor                                    = rr3*particleI.charge + rr5*dipoleDelta + rr7*qdpoleDelta;
+        double dipoleDelta = particleI.dipole.dot(deltaR);
+        double qdpoleDelta = qDotDelta.dot(deltaR);
+        double factor = rr3 * particleI.charge + rr5 * dipoleDelta + rr7 * qdpoleDelta;
 
-    field                                     = deltaR*factor - particleI.dipole*rr3 - qDotDelta*rr5_2;
-    particleIndex                             = particleJ.particleIndex;
-    _fixedMultipoleField[particleIndex]      += field*dScale;
-    _fixedMultipoleFieldPolar[particleIndex] += field*pScale;
+        Vec3 field = deltaR * factor - particleI.dipole * rr3 - qDotDelta * rr5_2;
+        unsigned int particleIndex = particleJ.particleIndex;
+        _fixedMultipoleField[particleIndex] += field * dScale;
+        _fixedMultipoleFieldPolar[particleIndex] += field * pScale;
+    }
 }
 
 void AmoebaReferenceMultipoleForce::calculateFixedMultipoleField(const vector<MultipoleParticleData>& particleData)
@@ -813,6 +841,10 @@ void AmoebaReferenceMultipoleForce::calculateInducedDipolePairIxns(const Multipo
 {
 
    if (particleI.particleIndex == particleJ.particleIndex)
+       return;
+
+   // If either particle has zero polarizability, then skip this interaction.
+   if (particleI.polarity == 0.0 || particleJ.polarity == 0.0)
        return;
 
     Vec3 deltaR   = particleJ.position - particleI.position;
@@ -1091,6 +1123,13 @@ double AmoebaReferenceMultipoleForce::calculateElectrostaticPairIxn(const Multip
                                                                         vector<Vec3>& forces,
                                                                         vector<Vec3>& torque) const
 {
+    // If either particle has zero moments, there is no interaction.
+    if (particleI.polarity == 0.0 && !isSphericalMultipoleNonZero(particleI)) {
+        return 0.0;
+    }
+    if (particleK.polarity == 0.0 && !isSphericalMultipoleNonZero(particleK)) {
+        return 0.0;
+    }
     unsigned int iIndex = particleI.particleIndex;
     unsigned int kIndex = particleK.particleIndex;
 
@@ -5195,41 +5234,45 @@ void AmoebaReferencePmeMultipoleForce::calculateFixedMultipoleFieldPairIxn(const
     double prr5        = dampedPInverseDistances[1];
     double prr7        = dampedPInverseDistances[2];
 
-    double dir         = particleI.dipole.dot(deltaR);
+    // Check particle J has a non-zero polarity and particle I has non-zero moments.
+    if (particleJ.polarity > 0.0 && isCartMultipoleNonZero(particleI)) {
 
-    Vec3 qxI           = Vec3(particleI.quadrupole[QXX], particleI.quadrupole[QXY], particleI.quadrupole[QXZ]);
-    Vec3 qyI           = Vec3(particleI.quadrupole[QXY], particleI.quadrupole[QYY], particleI.quadrupole[QYZ]);
-    Vec3 qzI           = Vec3(particleI.quadrupole[QXZ], particleI.quadrupole[QYZ], particleI.quadrupole[QZZ]);
+        double dir         = particleI.dipole.dot(deltaR);
 
-    Vec3 qi            = Vec3(qxI.dot(deltaR), qyI.dot(deltaR), qzI.dot(deltaR));
-    double qir         = qi.dot(deltaR);
+        Vec3 qxI           = Vec3(particleI.quadrupole[QXX], particleI.quadrupole[QXY], particleI.quadrupole[QXZ]);
+        Vec3 qyI           = Vec3(particleI.quadrupole[QXY], particleI.quadrupole[QYY], particleI.quadrupole[QYZ]);
+        Vec3 qzI           = Vec3(particleI.quadrupole[QXZ], particleI.quadrupole[QYZ], particleI.quadrupole[QZZ]);
 
-    double djr         = particleJ.dipole.dot(deltaR);
+        Vec3 qi            = Vec3(qxI.dot(deltaR), qyI.dot(deltaR), qzI.dot(deltaR));
+        double qir         = qi.dot(deltaR);
 
-    Vec3 qxJ           = Vec3(particleJ.quadrupole[QXX], particleJ.quadrupole[QXY], particleJ.quadrupole[QXZ]);
-    Vec3 qyJ           = Vec3(particleJ.quadrupole[QXY], particleJ.quadrupole[QYY], particleJ.quadrupole[QYZ]);
-    Vec3 qzJ           = Vec3(particleJ.quadrupole[QXZ], particleJ.quadrupole[QYZ], particleJ.quadrupole[QZZ]);
+        Vec3 fjm           = qi*(-2.0*bn2)  - particleI.dipole*bn1  + deltaR*(bn1*particleI.charge + bn2*dir+bn3*qir);
+        Vec3 fjd           = qi*(-2.0*drr5) - particleI.dipole*drr3 + deltaR*(drr3*particleI.charge + drr5*dir+drr7*qir);
+        Vec3 fjp           = qi*(-2.0*prr5) - particleI.dipole*prr3 + deltaR*(prr3*particleI.charge + prr5*dir+prr7*qir);
+        // increment the field due to this interaction
+        _fixedMultipoleField[jIndex]      += fjm - fjd;
+        _fixedMultipoleFieldPolar[jIndex] += fjm - fjp;
+    }
 
-    Vec3 qj            = Vec3(qxJ.dot(deltaR), qyJ.dot(deltaR), qzJ.dot(deltaR));
-    double qjr         = qj.dot(deltaR);
+    // Check particle I has a non-zero polarity and particle J has non-zero moments.
+    if (particleI.polarity > 0.0 && isCartMultipoleNonZero(particleJ)) {
 
-    Vec3 fim           = qj*(2.0*bn2)  - particleJ.dipole*bn1  - deltaR*(bn1*particleJ.charge - bn2*djr+bn3*qjr);
-    Vec3 fjm           = qi*(-2.0*bn2)  - particleI.dipole*bn1  + deltaR*(bn1*particleI.charge + bn2*dir+bn3*qir);
+        double djr         = particleJ.dipole.dot(deltaR);
 
-    Vec3 fid           = qj*(2.0*drr5) - particleJ.dipole*drr3 - deltaR*(drr3*particleJ.charge - drr5*djr+drr7*qjr);
-    Vec3 fjd           = qi*(-2.0*drr5) - particleI.dipole*drr3 + deltaR*(drr3*particleI.charge + drr5*dir+drr7*qir);
+        Vec3 qxJ           = Vec3(particleJ.quadrupole[QXX], particleJ.quadrupole[QXY], particleJ.quadrupole[QXZ]);
+        Vec3 qyJ           = Vec3(particleJ.quadrupole[QXY], particleJ.quadrupole[QYY], particleJ.quadrupole[QYZ]);
+        Vec3 qzJ           = Vec3(particleJ.quadrupole[QXZ], particleJ.quadrupole[QYZ], particleJ.quadrupole[QZZ]);
 
-    Vec3 fip           = qj*(2.0*prr5) - particleJ.dipole*prr3 - deltaR*(prr3*particleJ.charge - prr5*djr+prr7*qjr);
-    Vec3 fjp           = qi*(-2.0*prr5) - particleI.dipole*prr3 + deltaR*(prr3*particleI.charge + prr5*dir+prr7*qir);
+        Vec3 qj            = Vec3(qxJ.dot(deltaR), qyJ.dot(deltaR), qzJ.dot(deltaR));
+        double qjr         = qj.dot(deltaR);
 
-    // increment the field at each site due to this interaction
-
-
-    _fixedMultipoleField[iIndex]      += fim - fid;
-    _fixedMultipoleField[jIndex]      += fjm - fjd;
-
-    _fixedMultipoleFieldPolar[iIndex] += fim - fip;
-    _fixedMultipoleFieldPolar[jIndex] += fjm - fjp;
+        Vec3 fim           = qj*(2.0*bn2)  - particleJ.dipole*bn1  - deltaR*(bn1*particleJ.charge - bn2*djr+bn3*qjr);
+        Vec3 fid           = qj*(2.0*drr5) - particleJ.dipole*drr3 - deltaR*(drr3*particleJ.charge - drr5*djr+drr7*qjr);
+        Vec3 fip           = qj*(2.0*prr5) - particleJ.dipole*prr3 - deltaR*(prr3*particleJ.charge - prr5*djr+prr7*qjr);
+        // increment the field due to this interaction
+        _fixedMultipoleField[iIndex]      += fim - fid;
+        _fixedMultipoleFieldPolar[iIndex] += fim - fip;
+    }
 }
 
 void AmoebaReferencePmeMultipoleForce::calculateFixedMultipoleField(const vector<MultipoleParticleData>& particleData)
@@ -6248,6 +6291,13 @@ void AmoebaReferencePmeMultipoleForce::calculateDirectInducedDipolePairIxns(cons
                                                                             vector<UpdateInducedDipoleFieldStruct>& updateInducedDipoleFields)
 {
 
+    // If a particle has zero polarizability, then
+    // 1) it has no induced dipole to produce a field at the other site.
+    // 2) the induced dipole field of the other particle is not needed.
+    if (particleI.polarity == 0.0 || particleJ.polarity == 0.0) {
+        return;
+    }
+
     // compute the real space portion of the Ewald summation
 
     double uscale = 1.0;
@@ -6417,6 +6467,14 @@ double AmoebaReferencePmeMultipoleForce::calculatePmeDirectElectrostaticPairIxn(
                                                                                     vector<Vec3>& forces,
                                                                                     vector<Vec3>& torques) const
 {
+
+    // If either particle has zero moments, there is no interaction.
+    if (particleI.polarity == 0.0 && !isSphericalMultipoleNonZero(particleI)) {
+        return 0.0;
+    }
+    if (particleJ.polarity == 0.0 && !isSphericalMultipoleNonZero(particleJ)) {
+        return 0.0;
+    }
 
     unsigned int iIndex = particleI.particleIndex;
     unsigned int jIndex = particleJ.particleIndex;

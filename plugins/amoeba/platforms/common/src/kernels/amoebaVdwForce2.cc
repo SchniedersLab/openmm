@@ -8,6 +8,8 @@
     float2 pairSigmaEpsilon = sigmaEpsilon[atomType1+atomType2*NUM_TYPES];
     real sigma = pairSigmaEpsilon.x;
     real epsilon = pairSigmaEpsilon.y * scaleFactor1 * scaleFactor2;
+    // If epsilon or either atom's scale factor is zero, the energy will be zero even for r=0.
+    includeInteraction = (includeInteraction && epsilon != 0.0f);
     real softcore = 0.0f;
 #if VDW_ALCHEMICAL_METHOD == 1
     if (isAlchemical1 != isAlchemical2) { 

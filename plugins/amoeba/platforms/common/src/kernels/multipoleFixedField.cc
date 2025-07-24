@@ -36,6 +36,12 @@ inline DEVICE AtomData loadAtomData(int atom, GLOBAL const real4* RESTRICT posq,
 #ifdef USE_EWALD
 DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, real3 deltaR, float dScale, float pScale, real3* fields) {
     real r2 = dot(deltaR, deltaR);
+
+    // If an atom is alchemical and has no moments (e.g, while growing in vdW), it's valid to be superimposed on another atom.
+    // This avoids divide by zero below.
+    if (!(r2 > 0))
+        return;
+
     if (r2 <= CUTOFF_SQUARED) {
         // calculate the error function damping terms
 
@@ -145,7 +151,19 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, re
 }
 #else
 DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, real3 deltaR, float dScale, float pScale, real3* fields) {
-    real rI = RSQRT(dot(deltaR, deltaR));
+    real r2 = dot(deltaR, deltaR);
+
+    // If an atom is alchemical and has no moments (e.g., while growing in vdW), it's valid to be superimposed on another atom.
+    // This avoids divide by zero below.
+    if (!(r2 > 0)) {
+        fields[0] = make_real3(0);
+        fields[1] = make_real3(0);
+        fields[2] = make_real3(0);
+        fields[3] = make_real3(0);
+        return;
+    }
+
+    real rI = RSQRT(r2);
     real r = RECIP(rI);
     real r2I = rI*rI;
 

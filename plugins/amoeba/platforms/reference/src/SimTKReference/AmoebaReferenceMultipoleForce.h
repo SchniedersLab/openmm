@@ -1151,6 +1151,24 @@ protected:
     double normalizeVec3(Vec3& vectorToNormalize) const;
 
     /**
+     * Check if a multipole has a non-zero permanent Cartesian moment.
+     *
+     * @param particle Multipole to check.
+     *
+     * @return True if any Cartesian multipole moment is non-zero.
+    */
+    static bool isCartMultipoleNonZero(const MultipoleParticleData& particle) ;
+
+    /**
+     * Check if a multipole has a non-zero permanent spherical moment.
+     *
+     * @param particle Multipole to check.
+     *
+     * @return True if any Cartesian multipole moment is non-zero.
+    */
+    static bool isSphericalMultipoleNonZero(const MultipoleParticleData& particle) ;
+
+    /**
      * Initialize vector of double (size=numParticles)
      *
      * @param vectorToInitialize vector to initialize

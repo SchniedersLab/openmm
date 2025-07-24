@@ -225,6 +225,7 @@ void CommonCalcAmoebaMultipoleForceKernel::initialize(const System& system, cons
     mm_double4* posqd = (mm_double4*) &temp[0];
     vector<mm_float2> dampingAndTholeVec;
     vector<float> polarizabilityVec;
+    vector<float> localChargeVec;
     vector<float> localDipolesVec;
     vector<float> localQuadrupolesVec;
     vector<mm_int4> multipoleParticlesVec;
@@ -242,6 +243,7 @@ void CommonCalcAmoebaMultipoleForceKernel::initialize(const System& system, cons
         dampingAndTholeVec.push_back(mm_float2((float) damping, (float) thole));
         polarizabilityVec.push_back((float) polarity);
         multipoleParticlesVec.push_back(mm_int4(atomX, atomY, atomZ, axisType));
+        localChargeVec.push_back((float) charge);
         for (int j = 0; j < 3; j++)
             localDipolesVec.push_back((float) dipole[j]);
         localQuadrupolesVec.push_back((float) quadrupole[0]);
@@ -259,6 +261,7 @@ void CommonCalcAmoebaMultipoleForceKernel::initialize(const System& system, cons
         dampingAndTholeVec.push_back(mm_float2(0, 0));
         polarizabilityVec.push_back(0);
         multipoleParticlesVec.push_back(mm_int4(0, 0, 0, 0));
+        localChargeVec.push_back(0);
         for (int j = 0; j < 3; j++)
             localDipolesVec.push_back(0);
         for (int j = 0; j < 5; j++)
@@ -267,12 +270,14 @@ void CommonCalcAmoebaMultipoleForceKernel::initialize(const System& system, cons
     dampingAndThole.initialize<mm_float2>(cc, paddedNumAtoms, "dampingAndThole");
     polarizability.initialize<float>(cc, paddedNumAtoms, "polarizability");
     multipoleParticles.initialize<mm_int4>(cc, paddedNumAtoms, "multipoleParticles");
+    localCharges.initialize<float>(cc, paddedNumAtoms, "localCharges");
     localDipoles.initialize<float>(cc, 3*paddedNumAtoms, "localDipoles");
     localQuadrupoles.initialize<float>(cc, 5*paddedNumAtoms, "localQuadrupoles");
     lastPositions.initialize(cc, cc.getPosq().getSize(), cc.getPosq().getElementSize(), "lastPositions");
     dampingAndThole.upload(dampingAndTholeVec);
     polarizability.upload(polarizabilityVec);
     multipoleParticles.upload(multipoleParticlesVec);
+    localCharges.upload(localChargeVec);
     localDipoles.upload(localDipolesVec);
     localQuadrupoles.upload(localQuadrupolesVec);
     posq.upload(&temp[0]);
@@ -484,6 +489,7 @@ void CommonCalcAmoebaMultipoleForceKernel::initialize(const System& system, cons
     computeMomentsKernel = program->createKernel("computeLabFrameMoments");
     computeMomentsKernel->addArg(cc.getPosq());
     computeMomentsKernel->addArg(multipoleParticles);
+    computeMomentsKernel->addArg(localCharges);
     computeMomentsKernel->addArg(localDipoles);
     computeMomentsKernel->addArg(localQuadrupoles);
     computeMomentsKernel->addArg(labDipoles);
@@ -1668,6 +1674,7 @@ void CommonCalcAmoebaMultipoleForceKernel::copyParametersToContext(ContextImpl& 
     mm_double4* posqd = (mm_double4*) cc.getPinnedBuffer();
     vector<mm_float2> dampingAndTholeVec;
     vector<float> polarizabilityVec;
+    vector<float> localChargeVec;
     vector<float> localDipolesVec;
     vector<float> localQuadrupolesVec;
     vector<mm_int4> multipoleParticlesVec;
@@ -1685,6 +1692,7 @@ void CommonCalcAmoebaMultipoleForceKernel::copyParametersToContext(ContextImpl& 
         dampingAndTholeVec.push_back(mm_float2((float) damping, (float) thole));
         polarizabilityVec.push_back((float) polarity);
         multipoleParticlesVec.push_back(mm_int4(atomX, atomY, atomZ, axisType));
+        localChargeVec.push_back((float) charge);
         for (int j = 0; j < 3; j++)
             localDipolesVec.push_back((float) dipole[j]);
         localQuadrupolesVec.push_back((float) quadrupole[0]);
@@ -1702,6 +1710,7 @@ void CommonCalcAmoebaMultipoleForceKernel::copyParametersToContext(ContextImpl& 
         dampingAndTholeVec.push_back(mm_float2(0, 0));
         polarizabilityVec.push_back(0);
         multipoleParticlesVec.push_back(mm_int4(0, 0, 0, 0));
+        localChargeVec.push_back(0);
         for (int j = 0; j < 3; j++)
             localDipolesVec.push_back(0);
         for (int j = 0; j < 5; j++)
@@ -1710,6 +1719,7 @@ void CommonCalcAmoebaMultipoleForceKernel::copyParametersToContext(ContextImpl& 
     dampingAndThole.upload(dampingAndTholeVec);
     polarizability.upload(polarizabilityVec);
     multipoleParticles.upload(multipoleParticlesVec);
+    localCharges.upload(localChargeVec);
     localDipoles.upload(localDipolesVec);
     localQuadrupoles.upload(localQuadrupolesVec);
     cc.getPosq().upload(cc.getPinnedBuffer());

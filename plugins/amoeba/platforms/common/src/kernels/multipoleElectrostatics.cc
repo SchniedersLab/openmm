@@ -68,6 +68,12 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, bo
     delta.y = atom2->pos.y - atom1->pos.y;
     delta.z = atom2->pos.z - atom1->pos.z;
     real r2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
+
+    // If an atom is alchemical and has no moments (e.g., while growing in vdW), it's valid to be superimposed on another atom.
+    // This avoids divide by zero below.
+    if (!(r2 > 0))
+        return;
+
     real rInv = RSQRT(r2);
     real r = r2*rInv;
 

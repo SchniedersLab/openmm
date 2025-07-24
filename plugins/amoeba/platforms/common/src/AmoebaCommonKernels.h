@@ -175,6 +175,7 @@ protected:
     std::vector<mm_int4> covalentFlagValues;
     std::vector<mm_int2> polarizationFlagValues;
     ComputeArray multipoleParticles;
+    ComputeArray localCharges;
     ComputeArray localDipoles;
     ComputeArray localQuadrupoles;
     ComputeArray labDipoles;
