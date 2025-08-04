@@ -330,9 +330,8 @@ void setupAndGetForcesEnergyVdwAmmonia2(const std::string& sigmaCombiningRule, c
 
     // Load the vdw lambda value into the context.
     if (alchemicalMethod != AmoebaVdwForce::None) {
-       context.setParameter(AmoebaVdwForce::Lambda(), vdwLambda);
+       context.setParameter(amoebaVdwForce->Lambda(), vdwLambda);
     }
-
 
     context.setPositions(positions);
     State state                      = context.getState(State::Forces | State::Energy);

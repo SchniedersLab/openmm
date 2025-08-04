@@ -126,11 +126,11 @@ private:
     AmoebaVdwForce::PotentialFunction potentialFunction;
     double _n;
     double _alpha;
-    double _useLambdaComplement;
     double _cutoff;
     double _taperCutoffFactor;
     double _taperCutoff;
     double _taperCoefficients[3];
+    std::string _lambdaName;
     std::vector<int> particleType;
     std::vector<std::vector<double> > sigmaMatrix;
     std::vector<std::vector<double> > epsilonMatrix;

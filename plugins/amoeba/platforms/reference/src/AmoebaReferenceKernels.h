@@ -233,7 +233,7 @@ private:
     int numParticles;
     int useCutoff;
     int usePBC;
-    bool useLambdaComplement;
+    std::string lambdaName;
     double cutoff;
     double dispersionCoefficient;
     AmoebaReferenceVdwForce vdwForce;

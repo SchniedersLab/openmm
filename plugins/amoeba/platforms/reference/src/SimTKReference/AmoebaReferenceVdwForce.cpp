@@ -34,7 +34,7 @@ using std::vector;
 using namespace OpenMM;
 
 AmoebaReferenceVdwForce::AmoebaReferenceVdwForce() : _nonbondedMethod(AmoebaVdwForce::NoCutoff), _cutoff(1.0e+10), _taperCutoffFactor(0.9), _n(5), _alpha(0.7),
-_alchemicalMethod(AmoebaVdwForce::None), _useLambdaComplement(false) {
+_alchemicalMethod(AmoebaVdwForce::None), _lambdaName("AmoebaVdwLambda") {
     setTaperCoefficients(_cutoff);
 }
 
@@ -42,7 +42,7 @@ void AmoebaReferenceVdwForce::initialize(const AmoebaVdwForce& force) {
     _alchemicalMethod = force.getAlchemicalMethod();
     _n = force.getSoftcorePower();
     _alpha = force.getSoftcoreAlpha();
-    _useLambdaComplement = force.getUseLambdaComplement();
+    _lambdaName = force.Lambda();
     _nonbondedMethod = force.getNonbondedMethod();
     potentialFunction = force.getPotentialFunction();
     if (force.getNonbondedMethod() != AmoebaVdwForce::NoCutoff)

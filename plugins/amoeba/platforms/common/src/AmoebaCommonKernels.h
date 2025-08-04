@@ -358,8 +358,8 @@ private:
 
     // True if the AmoebaVdwForce AlchemicalMethod is not None.
     bool hasAlchemical;
-    // True if the AmoebaVdwForce should apply the complement of lambda.
-    bool useLambdaComplement;
+    // Name of lambda parameter.
+    std::string lambdaName;
     // Device memory for the alchemical state.
     ComputeArray vdwLambda;
     // Only update device memory when lambda changes.

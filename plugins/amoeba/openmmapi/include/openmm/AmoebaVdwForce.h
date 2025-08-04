@@ -81,13 +81,6 @@ namespace OpenMM {
 
 class OPENMM_EXPORT_AMOEBA AmoebaVdwForce : public Force {
 public:
-    /**
-     * This is the name of the parameter which stores the current Amoeba vdW lambda value.
-     */
-    static const std::string& Lambda() {
-        static const std::string key = "AmoebaVdwLambda";
-        return key;
-    }
 
     /**
      * This is an enumeration of the different methods that may be used for handling long range nonbonded forces.
@@ -141,6 +134,20 @@ public:
      * Create an Amoeba VdwForce.
      */
     AmoebaVdwForce();
+
+    /**
+     * This is the name of the parameter which stores the current Amoeba vdW lambda value.
+     */
+    const std::string& Lambda() const {
+        return lambdaName;
+    }
+
+    /**
+     * Set the name of the parameter which stores the current Amoeba vdW lambda value.
+     */
+    void setLambdaName(const std::string& name) {
+        lambdaName = name;
+    }
 
     /**
      * Get the number of particles
@@ -326,16 +333,6 @@ public:
     }
 
     /**
-     * Get whether the value of lambda will be applied as lambda = 1.0 - AmoebaVdwLambda.
-     * This useful for dual-topology calculations with two AmoebaVdWForce objects. The first topology uses
-     * AmoebaVdWForce with lambda = AmoebaVdwLambda and the second topology uses its complement as
-     * lambda = 1.0 - AmoebaVdwLambda.
-     */
-    bool getUseLambdaComplement() const {
-        return useLambdaComplement;
-    }
-
-    /**
      * Set whether to add a contribution to the energy that approximately represents the effect of VdW
      * interactions beyond the cutoff distance.  The energy depends on the volume of the periodic box, and is only
      * applicable when periodic boundary conditions are used.  When running simulations at constant pressure, adding
@@ -345,16 +342,6 @@ public:
         useDispersionCorrection = useCorrection;
     }
 
-    /**
-     * Set whether the value of lambda will be applied as lambda = 1.0 - AmoebaVdwLambda.
-     * This useful for dual-topology calculations with two AmoebaVdWForce objects. The first topology uses
-     * AmoebaVdWForce with lambda = AmoebaVdwLambda and the second topology uses its complement as
-     * lambda = 1.0 - AmoebaVdwLambda.
-     */
-    void setUseLambdaComplement(bool useComplement) {
-        useLambdaComplement = useComplement;
-    }
-    
     /**
      * Get whether parameters were specified by particle or by particle type.
      */
@@ -496,8 +483,8 @@ private:
     AlchemicalMethod alchemicalMethod;
     int n;
     double alpha;
-    bool useLambdaComplement;
 
+    std::string lambdaName;
     std::string sigmaCombiningRule;
     std::string epsilonCombiningRule;
 

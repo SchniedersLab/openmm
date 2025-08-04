@@ -57,7 +57,7 @@ void AmoebaVdwForceProxy::serialize(const void* object, SerializationNode& node)
     node.setIntProperty("alchemicalMethod", (int) force.getAlchemicalMethod());
     node.setIntProperty("potentialFunction", (int) force.getPotentialFunction());
     node.setBoolProperty("useTypes", useTypes);
-    node.setBoolProperty("useLambdaComplement", force.getUseLambdaComplement());
+    node.setStringProperty("lambdaName", force.Lambda());
 
     SerializationNode& particles = node.createChildNode("VdwParticles");
     for (int i = 0; i < force.getNumParticles(); i++) {
@@ -123,8 +123,8 @@ void* AmoebaVdwForceProxy::deserialize(const SerializationNode& node) const {
 
         bool useLambdaComplement = false;
         if (version > 5) {
-            useLambdaComplement = node.getBoolProperty("useLambdaComplement");
-            force->setUseLambdaComplement(useLambdaComplement);
+            std::string lambdaName = node.getStringProperty("lambdaName");
+            force->setLambdaName(lambdaName);
         }
 
         const SerializationNode& particles = node.getChildNode("VdwParticles");

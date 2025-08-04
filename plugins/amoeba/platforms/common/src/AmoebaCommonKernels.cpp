@@ -2129,12 +2129,8 @@ void CommonCalcAmoebaVdwForceKernel::initialize(const System& system, const Amoe
     nonbonded->addArgument(ComputeParameterInfo(sigmaEpsilon, "sigmaEpsilon", "float", 2));
     if (hasAlchemical) {
        isAlchemical.upload(isAlchemicalVec);
-       useLambdaComplement = force.getUseLambdaComplement();
-       if (useLambdaComplement) {
-           currentVdwLambda = 0.0f;
-       } else {
-           currentVdwLambda = 1.0f;
-       }
+       lambdaName = force.Lambda();
+       currentVdwLambda = 1.0f;
        vdwLambda.upload(&currentVdwLambda);
        nonbonded->addParameter(ComputeParameterInfo(isAlchemical, "isAlchemical", "float", 1));
        nonbonded->addArgument(ComputeParameterInfo(vdwLambda, "vdwLambda", "float", 1));
@@ -2187,10 +2183,7 @@ double CommonCalcAmoebaVdwForceKernel::execute(ContextImpl& context, bool includ
     }
 
     if (hasAlchemical) {
-       float contextLambda = context.getParameter(AmoebaVdwForce::Lambda());
-       if (useLambdaComplement) {
-           contextLambda = 1.0f - contextLambda;
-       }
+       float contextLambda = context.getParameter(lambdaName);
        if (contextLambda != currentVdwLambda) {
           vdwLambda.upload(&contextLambda);
           currentVdwLambda = contextLambda;

@@ -61,7 +61,7 @@ public:
     double calcForcesAndEnergy(ContextImpl& context, bool includeForces, bool includeEnergy, int groups);
     std::map<std::string, double> getDefaultParameters() {
        std::map<std::string, double> parameters;
-       parameters[AmoebaVdwForce::Lambda()] = 1.0;
+       parameters[owner.Lambda()] = 1.0;
        return parameters;
     }
     std::vector<std::string> getKernelNames();
