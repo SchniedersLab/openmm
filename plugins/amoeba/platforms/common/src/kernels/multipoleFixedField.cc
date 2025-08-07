@@ -39,7 +39,7 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, re
 
     // If an atom is alchemical and has no moments (e.g, while growing in vdW), it's valid to be superimposed on another atom.
     // This avoids divide by zero below.
-    if (!(r2 > 0))
+    if (!(r2 > 1.0e-5))
         return;
 
     if (r2 <= CUTOFF_SQUARED) {
@@ -155,7 +155,7 @@ DEVICE void computeOneInteraction(AtomData* atom1, LOCAL_ARG AtomData* atom2, re
 
     // If an atom is alchemical and has no moments (e.g., while growing in vdW), it's valid to be superimposed on another atom.
     // This avoids divide by zero below.
-    if (!(r2 > 0)) {
+    if (!(r2 > 1.0e-5)) {
         fields[0] = make_real3(0);
         fields[1] = make_real3(0);
         fields[2] = make_real3(0);
